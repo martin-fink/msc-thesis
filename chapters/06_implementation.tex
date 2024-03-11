@@ -1,0 +1,38 @@
+\chapter{Implementation}
+\label{ch:implementation}
+
+Our implementation of \projectname{} is integrated into the LLVM framework, wasi-libc, and the wasmtime WebAssembly runtime.
+The following subsections detail the specific modifications and extensions we made to each component.
+
+\section{LLVM Extensions}
+\label{sec:llvm}
+
+In LLVM, we introduced a novel sanitizer pass, that can be enabled via a compiler flag, designed to provide memory safety for stack allocations when compiling to WebAssembly.
+This sanitizer analyzes functions for stack allocations and applies padding and tagging to them.
+This ensures spatial memory safety by ensuring neighbouring allocations are tagged with different tags and temporal safety by untagging the stack frame when returning from a function.
+As WebAssembly does not support exceptions or C-style long jumps, we do not have to handle these special cases, which have proved to be tricky to get right with tagged memory.
+
+We extended LLVM with new built-in functions, which can be invoked directly from C code.
+These functions provide programmers direct access to our newly introduced memory tagging primitives, allowing for fine-grained control over memory operations.
+Utilizing these built-in functions, we modified the default allocator in wasi-libc to provide memory safety for heap allocations.
+
+\section{WASI Libc Modifications}
+\label{sec:wasi-libc}
+
+To allow us to run applications relying on libc on wasm64, we had to port the WebAssembly System Interface (WASI) and wasi-libc to wasm64.
+This mainly consisted of mechanical work, changing size and pointer types to 64\,bits.
+
+To provide memory safety for heap allocations, we modified dlmalloc, the default allocator in wasi-libc.
+Before returning allocated memory to the user, we tag the memory.
+This has the additional effect of not only protecting adjacent allocations from being accessed via memory overflows, but also the allocator metadata itself.
+When memory is freed or reallocated, we untag the memory regions returned to the allocator.
+This provides temporal safety, even after freed memory is allocated again, as the tag for the new allocation will be chosen at random.
+
+\section{WebAssembly Runtime Enhancements}
+\label{sec:wasm-runtime}
+
+Our implementation in the wasmtime runtime focuses on combining performance with security.
+In environments where hardware supports MTE, our new instructions are lowered to MTE instructions, leveraging the hardware's capabilities for memory safety.
+We have implemented a number of optimizations to ensure our generated code runs efficiently.
+In the general case, we generate a loop over the memory region to be tagged.
+This loop, however, is unrolled to tag larger blocks of memory at once, and is unrolled to a fixed number of instructions, if the size of the memory region to be tagged is known at compile time.

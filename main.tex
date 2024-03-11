@@ -1,0 +1,76 @@
+% !BIB TS-program = biber
+
+\RequirePackage[l2tabu,orthodox]{nag}
+
+% TODO: decide if one-sided/two-sided
+%\documentclass[headsepline,footsepline,footinclude=false,fontsize=11pt,paper=a4,listof=totoc,bibliography=totoc,BCOR=12mm,DIV=12]{scrbook} % two-sided
+\documentclass[headsepline,footsepline,footinclude=false,oneside,fontsize=11pt,paper=a4,listof=totoc,bibliography=totoc]{scrbook} % one-sided
+
+% TODO: change citation style in settings
+\input{settings}
+
+% TODO: change thesis information
+\newcommand*{\getUniversity}{Technische Universität München}
+\newcommand*{\getFaculty}{Informatics}
+\newcommand*{\getDegree}{Informatics}
+\newcommand*{\getSchool}{Computation, Information and Technology}
+\newcommand*{\getTitle}{Hardware-Assisted Memory Safety for WebAssembly}
+\newcommand*{\getTitleGer}{Hardwaregestützte Speichersicherheit für WebAssembly}
+\newcommand*{\getAuthor}{Martin Fink}
+\newcommand*{\getDoctype}{Master's Thesis}
+\newcommand*{\getSupervisor}{Supervisor}
+\newcommand*{\getAdvisor}{Advisor}
+\newcommand*{\getSubmissionDate}{Submission date}
+\newcommand*{\getSubmissionLocation}{Munich}
+
+\input{defs}
+
+\begin{document}
+
+% Set page numbering to avoid "destination with the same identifier has been already used" warning for cover page.
+% (see https://en.wikibooks.org/wiki/LaTeX/Hyperlinks#Problems_with_Links_and_Pages).
+\pagenumbering{alph}
+\input{pages/cover}
+
+\frontmatter{}
+
+\input{pages/title}
+\input{pages/disclaimer}
+\input{pages/acknowledgments}
+\input{pages/abstract}
+\microtypesetup{protrusion=false}
+\tableofcontents{}
+\microtypesetup{protrusion=true}
+
+\mainmatter{}
+
+\input{chapters/01_introduction}
+\input{chapters/02_background}
+\input{chapters/03_motivation}
+\input{chapters/04_overview}
+\input{chapters/05_design}
+\input{chapters/06_implementation}
+\input{chapters/07_evaluation}
+\input{chapters/08_related}
+\input{chapters/09_conclusion}
+% TODO: add more chapters here
+
+\appendix{}
+
+\microtypesetup{protrusion=false}
+
+\addchap{Abbreviations}
+\begin{acronym}
+	\itemsep-.25\baselineskip
+	\acro{WASM}[WASM]{WebAssembly}
+	\acro{MTE}[MTE]{Memory Tagging Extension}
+	\acro{PAC}[PAC]{Pointer Authentication}
+	\acro{IR}[IR]{intermediate representation}
+\end{acronym}
+
+\listoffigures{}
+\listoftables{}
+\microtypesetup{protrusion=true}
+\printbibliography{}
+
+\end{document}

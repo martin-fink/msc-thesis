@@ -1,0 +1,27 @@
+%-------------------------------------------------------------------------------
+\chapter{Introduction}
+\label{ch:intro}
+%-------------------------------------------------------------------------------
+
+In recent years, WebAssembly (WASM)~\cite{haas2017bringing} has gained prominence as a versatile compilation target, catering not only to web-based applications but also to a broader spectrum of use cases.
+At its core, WASM is engineered to serve as an efficient compilation target for high-level, compiled languages such as C and C++.
+A fundamental aspect of its design is its linear, contiguous memory model.
+This model is instrumental in facilitating the straightforward compilation of these languages.
+Moreover, it plays a pivotal role in ensuring the performance efficiency of the execution process.
+
+While WebAssembly provides a sandbox for the guest code, which protects the host and other guests from malicious or buggy code, it does not inherently prevent memory safety issues within an application's memory space.
+This limitation becomes particularly evident when compiling languages like C or C++, where there are no language-level guarantees to prevent these bugs.
+
+However, recent advancements in hardware, such as ARM's Memory Tagging Extension (MTE) and the Pointer Authentication Extension (PAC), offer promising, high-performance solutions. These hardware extensions are designed to effectively address and rectify such memory safety concerns.
+
+We introduce \projectname{}, a comprehensive solution that leverages both MTE and PAC to address both spatial and temporal memory safety bugs in WebAssembly-compiled programs.
+Our approach requires no modification to the source code.
+The core contributions of this paper are outlined as follows:
+
+\begin{description}
+    \item[WebAssembly Extension:] We develop a minimal and generic extension to the WebAssembly instruction set, allowing for protected memory regions without code changes.
+    \item[Compiler Toolchain:] We develop a specialized compiler toolchain for unmodified C/C++ programs, optimized for efficiency with our WebAssembly extension.
+    \item[Wasmtime Modification:] Modifications to Wasmtime enable leveraging MTE and PAC, providing security without compromising performance.
+    \item[Bounds Checks with MTE:] We leverage MTE to eliminate expensive bounds checks for 64\,bit WebAssembly programs
+    \item[Performance Evaluation:] Extensive evaluation on ARM hardware, analyzing performance, memory overheads, and safety guarantees.
+\end{description}

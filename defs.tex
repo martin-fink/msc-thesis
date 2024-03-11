@@ -1,0 +1,65 @@
+\newcommand{\todo}[1]{\textcolor{red}{TODO: [#1]}}
+\newcommand{\mfcomment}[1]{\textcolor{blue}{MF: [#1]}}
+
+\newcommand{\projectname}[0]{\textsc{SafeWasm}}
+
+\usepackage{colortbl}
+%\usepackage{pifont}% http://ctan.org/pkg/pifont
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+
+
+\lstdefinestyle{customc}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines,
+    tabsize=2,
+    numbers=left,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=lines,
+    numbersep=2pt,
+    escapechar=|,
+    captionpos=b,
+    language=c,
+    keywords={size_t, void, for, int, struct, return, long}
+}
+
+\lstdefinelanguage{wasm}{
+    sensitive=true,
+    otherkeywords={},
+    morekeywords=[5]{i32, f32, i64, f64, add, const, sub, return, module, func, param, result, global, mut, global, export, import, memory, data, local, get, set, elem, table, call, call_indirect, type, segment, new, set_tag, free, tee},
+    keywordstyle={[5]\color{magenta}},
+    numberstyle=\tiny\color{black},
+    rulecolor=\color{black},
+    morecomment=**[l][\itshape\color{codegreen}]{;;},
+}
+
+\lstdefinestyle{customwasm}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines,
+    tabsize=2,
+    numbers=left,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=lines,
+    numbersep=2pt,
+    escapechar=|,
+    captionpos=b,
+    language=wasm,
+    keywords={}
+}
+

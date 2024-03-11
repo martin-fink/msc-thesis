@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "type": "command",
+            "name": "watch",
+            "program": "make",
+            "args": [ "watch" ],
+        },
+        
+    ]
+}
