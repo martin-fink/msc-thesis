@@ -10,5 +10,35 @@
 % then go into sandboxing, that it might be slow, etc.
 
 While WebAssembly provides strong safety and security guarantees, as discussed in \cref{sec:wasm}, these mostly guarantee safety for the host running the programs, not the program itself.
-Memory Safety Vulnerabilities continue to be a problem for software developers and major players in the industry.
-In late 2023, a 
+In~\cite{lehmann2020everything}, \citeauthor*{lehmann2020everything} show that while some attack surfaces, such as injecting shellcode or jumping to arbitrary addresses, are mitigated by the design of WebAssembly, others, such as buffer overflows or write accesses to static, read-only data is possible and being used to exploit programs running in the wild.
+These need to be either mitigated at the language level by rewriting software in a safe language such as Rust, by manually inserting bounds checks, which is error-prone, or by inserting checks using the compiler and sanitizing the code.
+
+If the input string is not terminated by a null terminator or longer than 32 bytes, the write will go out of bounds of the buffer and, depending on the stack layout chosen by the compiler, overwrite \texttt{a}.
+
+Additionally, bugs like {CVE-2023-4863}~\cite{CVE-2023-4863} continue to be exploited and show that memory safety is not a solved problem.
+While they do not escape the WebAssembly sandbox, they still pose a security risk.
+In C, the use of unsafe primitives or bugs, such as missing bounds checks, can be exploited by the attackers, e.g. by overwriting a variable to elevate their privileges.
+In \cref{fig:vulnerable-overflow}, the lack of bounds checks allows an attacker controlling the variable \texttt{input} to set \texttt{is\_admin} to true.
+
+\begin{figure*}
+    \centering
+    \begin{lstlisting}[frame=h,style=customc,label={lst:vulnerable-overflow}]
+struct User {
+    char name[32];
+    int is_admin;
+};
+void func(char *input) {
+    User user = { 0 };
+    strcpy(user.name, input);
+}
+    \end{lstlisting}
+    \caption{Vulnerable overflow}
+    \label{fig:vulnerable-overflow}
+\end{figure*}
+
+To contain potentially malicious programs within their sandbox, a number of different techniques may be used, as discussed in \cref{subsec:webassembly-sandbox}.
+In most cases, the sandbox relies on virtual memory and guard pages to contain memory accesses.
+However, in cases where virtual memory cannot be used, e.g. when running 64\,bit WebAssembly programs, the engine needs to fall back to software based bounds checks, which bring along a heavy performance penalty.
+In our measurements, removing guard pages and performing explicit bounds checks showed an average overhead of \todo{x}\,\% overhead.
+
+\todo{insert graph here}

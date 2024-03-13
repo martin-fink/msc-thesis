@@ -34,7 +34,8 @@ WebAssembly~\cite{haas2017bringing}, initially designed as an alternative, high-
 
 Since its inception, WebAssembly has expanded its utility beyond the initial design goal to various other domains, such as Function as a Service (FaaS) workloads, as an alternative to containers within Docker, as an isolation mechanism to allow untrusted code to be run within native applications, among other uses.
 
-\paragraph{Memory Bounds Checks}
+\subsection{WebAssembly Sandbox}
+\label{subsec:webassembly-sandbox}
 When accessing memory, the \ac{WASM} runtime must ensure the access is within the bounds of the accessible linear memory.
 Then, the memory access is performed relative to the memory's base address.
 In current runtimes, this is usually achieved using two major approaches.

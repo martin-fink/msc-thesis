@@ -2,14 +2,13 @@
 
 \RequirePackage[l2tabu,orthodox]{nag}
 
-% TODO: decide if one-sided/two-sided
 %\documentclass[headsepline,footsepline,footinclude=false,fontsize=11pt,paper=a4,listof=totoc,bibliography=totoc,BCOR=12mm,DIV=12]{scrbook} % two-sided
-\documentclass[headsepline,footsepline,footinclude=false,oneside,fontsize=11pt,paper=a4,listof=totoc,bibliography=totoc]{scrbook} % one-sided
+\documentclass[headsepline,footsepline,footinclude=false,oneside,fontsize=11pt,paper=a4,listof=totoc,bibliography=totoc]{scrbook}
+\usepackage{textcomp} % one-sided
 
 % TODO: change citation style in settings
 \input{settings}
 
-% TODO: change thesis information
 \newcommand*{\getUniversity}{Technische Universität München}
 \newcommand*{\getFaculty}{Informatics}
 \newcommand*{\getDegree}{Informatics}
@@ -18,9 +17,9 @@
 \newcommand*{\getTitleGer}{Hardwaregestützte Speichersicherheit für WebAssembly}
 \newcommand*{\getAuthor}{Martin Fink}
 \newcommand*{\getDoctype}{Master's Thesis}
-\newcommand*{\getSupervisor}{Supervisor}
-\newcommand*{\getAdvisor}{Advisor}
-\newcommand*{\getSubmissionDate}{Submission date}
+\newcommand*{\getSupervisor}{Prof. Pramod Bhatotia}
+\newcommand*{\getAdvisor}{Dimitrios Stavrakakis}
+\newcommand*{\getSubmissionDate}{15.04.2024}
 \newcommand*{\getSubmissionLocation}{Munich}
 
 \input{defs}
