@@ -47,7 +47,7 @@ While the design of WebAssembly is designed to prevent malicious or erronous pro
 \section{Memory Safety in the context of WebAssembly}
 \label{sec:memory-safety}
 
-Programs written in languages like C or C++ are prone to memory safety bugs such as memory accesses to out-of-bounds or dangling pointers, which are the fundamental attack primitives enabling a whole class of attacks on a vulnerable or buggy program~\cite{szekeres2013sok}.
+Programs written in languages like C or C++ are prone to memory safety bugs such as memory accesses to (1) out-of-bounds or (2) dangling pointers, which are the fundamental attack primitives enabling a whole class of attacks on a vulnerable or buggy program~\cite{szekeres2013sok}.
 Approaches to tackle these issues exist in several forms.
 Programs may be written in managed languages that prevent these attacks by either not providing raw pointer accesses, such as Java, Python, JavaScript, or others.
 In these languages, access to memory is either performed through bounds-checked arrays or through managed objects, such as classes.
@@ -63,6 +63,7 @@ Studies show that in large software projects, memory safety bugs make up between
 
 \citeauthor*{lehmann2020everything} show that while some attack surfaces, such as jumping to arbitrary addresses or injecting shellcode, are mitigated by the design of WebAssembly, buffer overflows or dangling pointer accesses are still possible~\cite{lehmann2020everything}.
 Since WebAssembly does not provide separate read-only memory regions, this opens up other surfaces, allowing attackers to potentially overwrite static data, since compilers place these in readable and writeable memory.
+Crucially, neither fundamental attack primitives (1) or (2) are prevented by WebAssembly and can form the basis of an exploit.
 
 \subsection{Software-Based Mitigations}
 \label{subsec:software-based-mitigations}
