@@ -59,17 +59,19 @@
 
 \renewcommand{\dateseparator}{-}
 
-\newcommand{\draft}{\upshape{\texttt{Draft: \input{git_ref.tex} {\yyyymmdddate\today}T\currenttime } } }
-\backgroundsetup{
-    angle=0,
-    contents={
-    \begin{tikzpicture}
-      \node[text=red, above=-1cm] at (current page.north) {\draft};
-      \node[text=red, below=-1cm] at (current page.south) {\draft};
-    \end{tikzpicture}
-    },
-    opacity=1,
-    scale=1
+\IfFileExists{git_ref.tex}{%
+    \newcommand{\draft}{\upshape{\texttt{Draft: \input{git_ref.tex} {\yyyymmdddate\today}T\currenttime } } }
+    \backgroundsetup{
+        angle=0,
+        contents={
+        \begin{tikzpicture}
+          \node[text=red, above=-1cm] at (current page.north) {\draft};
+          \node[text=red, below=-1cm] at (current page.south) {\draft};
+        \end{tikzpicture}
+        },
+        opacity=1,
+        scale=1
+    }
 }
 
 
