@@ -34,12 +34,12 @@ Since its inception, WebAssembly has expanded its utility beyond the initial des
 When accessing memory, the \ac{WASM} runtime must ensure the access is within the bounds of the accessible linear memory.
 Then, the memory access is performed relative to the memory's base address.
 In current runtimes, this is usually achieved using two major approaches.
-\begin{enumerate}
-    \item Explicit bounds checks: An explicit bounds check is inserted before each memory access, comparing the index with the bound of the current memory.
-    \item Guard pages: When running 32\,bit \ac{WASM} on 64\,bit hosts, the runtime can leverage the fact that virtual memory is abundant.
+\begin{description}
+    \item[Explicit bounds checks:] An explicit bounds check is inserted before each memory access, comparing the index with the bound of the current memory.
+    \item[Guard pages:] When running 32\,bit \ac{WASM} on 64\,bit hosts, the runtime can leverage the fact that virtual memory is abundant.
     For each linear memory, $2^{32}$\,bytes, or 4\,GiB of virtual memory are allocated, with the memory beyond the guard being marked as inaccessible.
     The MMU will catch accesses into these pages and the operating system will deliver a segmentation fault to the runtime, which in turn will deliver a trap to the \ac{WASM} program.
-\end{enumerate}
+\end{description}
 
 
 While the design of WebAssembly is designed to prevent malicious or erronous programs from compromising the host, buggy programs are still vulnerable to classical memory safety errors discussed earlier, such as buffer overflows.
