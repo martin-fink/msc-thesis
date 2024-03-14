@@ -9,6 +9,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Build pdf
       run: make pdf
@@ -17,6 +19,6 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: thesis
-        path: build/*.pdf
+        path: build/main.pdf
         if-no-files-found: error
         retention-days: 14

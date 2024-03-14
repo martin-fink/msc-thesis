@@ -2,11 +2,11 @@ FILE := main
 OUT  := build
 
 .PHONY: pdf
-pdf: figures git_ref
+pdf: git_ref
 	+latexmk -interaction=nonstopmode -outdir="$(OUT)" -pdf -halt-on-error -jobname="$(jobname)" $(FILE)
 
 .PHONY: watch
-watch: figures git_ref
+watch: git_ref
 	+latexmk -interaction=nonstopmode -outdir="$(OUT)" -pdf -pvc -halt-on-error -jobname="$(jobname)" $(FILE)
 
 .PHONY: _fachschaft-print
