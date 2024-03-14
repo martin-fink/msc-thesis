@@ -40,17 +40,17 @@ Untrusted input (e.g., network data, file reads) originates from outside the san
 This model mirrors the threat environment of a standard non-\ac{WASM} program.
 Potential threats include:
 
-\begin{description}
-    \item[Buffer overflows] Attempts to write data beyond allocated buffer boundaries.
-    \item[Use-after-free] Accessing memory after it has been deallocated.
-\end{description}
+\begin{itemize}
+    \item \textbf{Buffer overflows} Attempts to write data beyond allocated buffer boundaries.
+    \item \textbf{Use-after-free} Accessing memory after it has been deallocated.
+\end{itemize}
 
-WebAssembly's design inherently mitigates certain threats common in non-WASM environments, so we will not consider the following vectors:
+As discussed in \cref{sec:wasm}, WebAssembly's design inherently mitigates certain threats common in non-\ac{WASM} environments, so we will not consider the following vectors:
 
-\begin{description}
-    \item[Return-oriented attacks] WASM's structured control flow constructs prevent arbitrary code execution through stack manipulation.
-    \item[Calling unknown function pointers] Function tables enforce a strict mechanism for function calls, ensuring the integrity of call targets.
-\end{description}
+\begin{itemize}
+    \item \textbf{Return-oriented attacks} {\ac{WASM}'s} structured control flow constructs prevent arbitrary code execution through stack manipulation.
+    \item \textbf{Calling unknown function pointers} Function tables enforce a strict mechanism for function calls, ensuring the integrity of call targets.
+\end{itemize}
 
 \paragraph{External Memory Safety}
 
