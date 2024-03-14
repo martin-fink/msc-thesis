@@ -3,11 +3,6 @@
 
 In this section, we discuss Memory Safety, \ac{WASM}, and ARM's \ac{PAC} and \ac{MTE} extensions.
 
-\section{Memory Safety}
-\label{sec:memory-safety}
-
-\todo{write about memory safety}
-
 \section{WebAssembly}
 \label{sec:wasm}
 
@@ -49,14 +44,51 @@ In current runtimes, this is usually achieved using two major approaches.
 
 While the design of WebAssembly is designed to prevent malicious or erronous programs from compromising the host, buggy programs are still vulnerable to classical memory safety errors discussed earlier, such as buffer overflows.
 
+\section{Memory Safety in the context of WebAssembly}
+\label{sec:memory-safety}
+
+Programs written in languages like C or C++ are prone to memory safety bugs such as memory accesses to out-of-bounds or dangling pointers, which are the fundamental attack primitives enabling a whole class of attacks on a vulnerable or buggy program~\cite{szekeres2013sok}.
+Approaches to tackle these issues exist in several forms.
+Programs may be written in managed languages that prevent these attacks by either not providing raw pointer accesses, such as Java, Python, JavaScript, or others.
+In these languages, access to memory is either performed through bounds-checked arrays or through managed objects, such as classes.
+The runtime cleans up dangling objects through a garbage collector, they cannot be manually deallocated.
+This results in all references pointing to valid objects and all memory accesses being bounds-checked.
+Other languages, such as Rust, take a different approach.
+In safe Rust, the type system forbids many cases of invalid programs, e.g., dangling references or raw pointer accesses.
+An escape hatch in the form of unsafe exists, which allows dropping down to the level of C, being able to directly manipulate raw bytes.
+Both these approaches represent a fundamental tradeoff.
+Managed memory, either in the form of reference-counting, or through a garbage collector incurs an overhead that may or may not be tolerated in some environments.
+
+Studies show that in large software projects, memory safety bugs make up between 70 and 75\% of all issues~\cite{chromium_memory_safety,microsoft_memory_safety,android_memory_safety}.
+
+\citeauthor*{lehmann2020everything} show that while some attack surfaces, such as jumping to arbitrary addresses or injecting shellcode, are mitigated by the design of WebAssembly, buffer overflows or dangling pointer accesses are still possible~\cite{lehmann2020everything}.
+Since WebAssembly does not provide separate read-only memory regions, this opens up other surfaces, allowing attackers to potentially overwrite static data, since compilers place these in readable and writeable memory.
+
+\subsection{Software-Based Mitigations}
+\label{subsec:software-based-mitigations}
+
+To mitigate memory safety bugs in languages that do not provide safety guarantees at the language level, software-based approaches to detect these errors exist.
+Checks can be inserted automatically at the compiler level, which is an approach chosen by \ac{ASAN}~\cite{serebryany2012addresssanitizer}.
+\ac{ASAN}incurs a large overhead, on average 73\%, which is too large to be deployed in production and is usually only tolerated while testing or fuzzing software.
+A sampling based version of \ac{ASAN}, GWP-Asan, is deployed in production in several large projects, which results in a low overhead, but no full protection for a single process~\cite{serebryany2023gwp}.
+On a large scale, however, this approach allows for discovery of real-world bugs that may not be triggered by testing or fuzzing workloads.
+
 \section{Memory Safety Hardware Extensions}
 \label{sec:memory-safety-hardware-extensions}
 
 As an alternative to flexible, but slow software solutions to detect and prevent memory safety issues, CPU designers have come up with several hardware extensions designed as a building block.
 These provide important primitives, that can be used to provide full or partial memory safety to programs, while also having a small enough footprint to be able to ship these solutions in production.
 
-On aarch64, the 64 bit variant of the arm instruction set, only 48 out of the available 64\,bits are used to address memory, while the remaining bits are unused.
-Hardware extensions such as MTE (\cref{subsec:mte}) and PAC (\cref{subsec:pac}) utilize those unused bits to store metadata.
+\begin{figure}[t]
+    \centering
+    \includegraphics[scale=1]{figures/build/pointer-aarch64}
+    \caption{Pointer layout on aarch64 with and without MTE and PAC enabled}
+    \label{fig:aarch64-pointer}
+\end{figure}
+
+In \cref{fig:aarch64-pointer}, the layout of pointer bits used for address translation in aarch64, the 64\,bit variant of the ArmV8 instruction set, is shown.
+Only 48 out of the available 64\,bits are used to address memory, while the remaining bits are set to either 0 or 1 to differentiate between kernel and userspace addresses, but unused for further address translation.
+ Hardware extensions such as MTE (\cref{subsec:mte}) and PAC (\cref{subsec:pac}) utilize those unused bits to store metadata.
 
 \subsection{Memory Tagging Extension (MTE)}
 \label{subsec:mte}
