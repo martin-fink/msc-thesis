@@ -5,12 +5,13 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: texlive/texlive:latest
+    container:
+      image: texlive/texlive:latest
+      # set the user so it can run git
+      options: --user 1001
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
 
     - name: Build pdf
       run: make pdf
