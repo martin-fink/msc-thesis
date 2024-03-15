@@ -286,5 +286,6 @@ TSWLatexianTemp*
 #*Notes.bib
 
 figures/sources/*.bkp
+figures/sources/*.dtmp
 
 git_ref.tex
