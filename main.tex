@@ -4,7 +4,8 @@
 
 %\documentclass[headsepline,footsepline,footinclude=false,fontsize=11pt,paper=a4,listof=totoc,bibliography=totoc,BCOR=12mm,DIV=12]{scrbook} % two-sided
 \documentclass[headsepline,footsepline,footinclude=false,oneside,fontsize=11pt,paper=a4,listof=totoc,bibliography=totoc]{scrbook}
-\usepackage{textcomp} % one-sided
+\usepackage{textcomp}
+\usepackage{mathtools} % one-sided
 
 % TODO: change citation style in settings
 \input{settings}
@@ -66,6 +67,7 @@
 	\acro{PAC}[PAC]{Pointer Authentication}
 	\acro{IR}[IR]{intermediate representation}
 	\acro{ASAN}[ASAN]{Address Sanitizer}
+	\acro{GEP}[GEP]{\texttt{getelementptr}}
 \end{acronym}
 
 \listoffigures{}

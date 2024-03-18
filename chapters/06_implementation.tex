@@ -4,6 +4,8 @@
 Our implementation of \projectname{} is integrated into the LLVM framework, wasi-libc, and the wasmtime WebAssembly runtime.
 The following subsections detail the specific modifications and extensions we made to each component.
 
+% TODO: this needs more work.
+
 \section{LLVM Extensions}
 \label{sec:llvm}
 
@@ -11,6 +13,12 @@ In LLVM, we introduced a novel sanitizer pass, that can be enabled via a compile
 This sanitizer analyzes functions for stack allocations and applies padding and tagging to them.
 This ensures spatial memory safety by ensuring neighbouring allocations are tagged with different tags and temporal safety by untagging the stack frame when returning from a function.
 As WebAssembly does not support exceptions or C-style long jumps, we do not have to handle these special cases, which have proved to be tricky to get right with tagged memory.
+
+\subsection{C extensions}
+\label{subsec:c-extensions}
+
+To be able to create and manipulate segments manually, e.g.\ to build a segment-aware memory allocator, we need to expose some primitives to C.
+We do this by creating three builtin functions in clang that are lowered to intrinsic calls in LLVM.
 
 We extended LLVM with new built-in functions, which can be invoked directly from C code.
 These functions provide programmers direct access to our newly introduced memory tagging primitives, allowing for fine-grained control over memory operations.

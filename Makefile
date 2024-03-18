@@ -33,7 +33,7 @@ clean:
 
 .PHONY: mrproper
 mrproper:
-	rm -rf $(OUT) $(wildcard figures/build/*.pdf)
+	rm -rf $(OUT)
 
 .PHONY: git_ref
 git_ref:
