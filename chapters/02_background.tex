@@ -89,25 +89,28 @@ These provide important primitives, that can be used to provide full or partial 
 
 In \cref{fig:aarch64-pointer}, the layout of pointer bits used for address translation in aarch64, the 64\,bit variant of the ArmV8 instruction set, is shown.
 Only 48 out of the available 64\,bits are used to address memory, while the remaining bits are set to either 0 or 1 to differentiate between kernel and userspace addresses, but unused for further address translation.
- Hardware extensions such as MTE (\cref{subsec:mte}) and PAC (\cref{subsec:pac}) utilize those unused bits to store metadata.
+ Hardware extensions such as \ac{MTE} (\cref{subsec:mte}) and \ac{PAC} (\cref{subsec:pac}) utilize those unused bits to store metadata.
 
 \subsection{Memory Tagging Extension (MTE)}
 \label{subsec:mte}
 
-ARMs Memory Tagging Extension, available from armv8.5, provides a building block to prevent both spatial and temporal memory safety violations~\cite{ARM2019MTE}.
+ARMs \Ac{MTE}, available from armv8.5, provides a building block to prevent both spatial and temporal memory safety violations~\cite{ARM2019MTE}.
 MTE implements a lock-and-key mechanism where memory regions can be tagged with one of 16 distinct tags, and memory accessed are only allowed using pointers with the corresponding keys.
 
-The locking mechanism is implemented by storing a 4\,bit tag in bits 56-59.
+The locking mechanism is implemented by storing a 4\,bit tag in bits 56--59.
 Accordingly, a tag is assigned to every 16\,bytes of tagged memory.
 When accessing memory with a mismatched tag, depending on the selected configuration, either a synchronous or asynchronous exception is thrown by the hardware.
 Synchronous exceptions trigger a signal to the application immediately, and the memory access does not succeed.
 Asynchronous exceptions are not triggered immediately and the memory access succeeds.
 On the next entry to the kernel, the signal is delivered to the application.
 
+We differentiate between logical tags and allocation tags.
+Logical tags refer to the tags stored in pointers, while allocation tags refer to the tags assigned to a granule of memory.
+
 \subsection{Pointer Authentication (PAC)}
 \label{subsec:pac}
 
-Pointer Authentication (PAC)~\cite{Qualcomm2017PointerAuth} introduces primitives to prevent attackers from modifying pointers stored in memory.
+\Ac{PAC}~\cite{Qualcomm2017PointerAuth} introduces primitives to prevent attackers from modifying pointers stored in memory.
 The extension provides three instructions that can be used to sign pointers, and sign or strip the signature from pointers.
 The signature is stored in the upper 16 bits of pointers, with the exact layout dependent on the Operating System, hardware, and other factors, such as if MTE is enabled.
 Signed pointers are invalid and cannot be used to address memory.

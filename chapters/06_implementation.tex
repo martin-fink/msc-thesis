@@ -2,45 +2,131 @@
 \label{ch:implementation}
 
 Our implementation of \projectname{} is integrated into the LLVM framework, wasi-libc, and the wasmtime WebAssembly runtime.
-The following subsections detail the specific modifications and extensions we made to each component.
+The following sections detail the specific modifications and extensions we made to each component, as well as some of the implementation choices and details to tackle specific problems.
 
-% TODO: this needs more work.
-
-\section{LLVM Extensions}
+\section{LLVM}
 \label{sec:llvm}
 
-In LLVM, we introduced a novel sanitizer pass, that can be enabled via a compiler flag, designed to provide memory safety for stack allocations when compiling to WebAssembly.
-This sanitizer analyzes functions for stack allocations and applies padding and tagging to them.
-This ensures spatial memory safety by ensuring neighbouring allocations are tagged with different tags and temporal safety by untagging the stack frame when returning from a function.
-As WebAssembly does not support exceptions or C-style long jumps, we do not have to handle these special cases, which have proved to be tricky to get right with tagged memory.
+We chose LLVM as our compiler from C/C++ to WebAssembly.
+To be able to compile to our memory safety extension, we modified the WebAssembly backend to add support for our new instructions, allowing LLVM to emit our extension in both bytecode and text format.
 
-\subsection{C extensions}
-\label{subsec:c-extensions}
+\subsection{LLVM IR}
+\label{subsec:llvm-ir}
+
+In the middle end, we introduced three new intrinsic functions that correspond and are lowered to our \ac{WASM} instructions by the backend.
+\begin{itemize}
+  \item \lstinline[style=customc,language=llvm]{ptr @llvm.wasm.segment.new(ptr, i64);}
+  \item \lstinline[style=customc,language=llvm]{void @llvm.wasm.segment.set_tag(ptr, ptr, i64);}
+  \item \lstinline[style=customc,language=llvm]{void @llvm.wasm.segment.free(ptr, i64);}
+\end{itemize}
+Calls to these intrinsic functions can be inserted by the frontend or a sanitizer pass.
+A function that allocates 32 bytes on the stack might be lowered to the following IR:
+
+\begin{lstlisting}[frame=h,style=customc,
+    label={lst:llvm-intrinsics},language=llvm]
+define hidden signext void @foo(i32 %index) {
+entry:
+  %arr = alloca [32 x i8], align 16
+  ; create a new segment
+  %1 = call ptr @llvm.wasm.segment.new(ptr %arr, i64 32)
+
+  ; do some work
+
+  ; return ownership of segment to tag
+  call void @llvm.wasm.segment.set.tag(ptr %1, ptr %arr, i64 32)
+  ret void
+}
+\end{lstlisting}
+
+\subsection{LLVM Sanitizer Pass}
+\label{subsec:llvm-sanitizer-pass}
+
+In LLVM, we introduced a WASM-specific sanitizer pass that can be enabled via a compiler flag, designed to provide memory safety for stack allocations when compiling to WebAssembly.
+This sanitizer analyzes functions for stack allocations and applies padding and tagging to them, as discussed in \cref{subsec:stack-safety}.
+The pass runs after all optimizations, ensuring we do not block passes that might remove stack allocations, such as \texttt{mem2reg}.
+
+As WebAssembly does not support exceptions or C-style long jumps, we do not have to handle these special cases, which have been proven to be tricky to implement with tagged memory in the past.
+
+\subsection{C extension}
+\label{subsec:c-extension}
 
 To be able to create and manipulate segments manually, e.g.\ to build a segment-aware memory allocator, we need to expose some primitives to C.
 We do this by creating three builtin functions in clang that are lowered to intrinsic calls in LLVM.
 
-We extended LLVM with new built-in functions, which can be invoked directly from C code.
-These functions provide programmers direct access to our newly introduced memory tagging primitives, allowing for fine-grained control over memory operations.
-Utilizing these built-in functions, we modified the default allocator in wasi-libc to provide memory safety for heap allocations.
+\begin{itemize}
+  \item \lstinline[style=customc]{void *__builtin_wasm_segment_new(void *, unsigned long);}
+  \item \lstinline[style=customc]{void __builtin_wasm_segment_set_tag(void *, void *, unsigned long);}
+  \item \lstinline[style=customc]{void __builtin_wasm_segment_free(void *, unsigned long);}
+\end{itemize}
+
+The functions can be used as regular functions in C code, e.g.:
+
+\begin{lstlisting}[frame=h,style=customc,
+  label={lst:builtin-functions}]
+void *my_malloc(unsigned long size) {
+  void *memory = malloc(size);
+  return __builtin_wasm_segment_new(memory, size);
+}
+\end{lstlisting}
 
 \section{WASI Libc Modifications}
 \label{sec:wasi-libc}
 
-To allow us to run applications relying on libc on wasm64, we had to port the WebAssembly System Interface (WASI) and wasi-libc to wasm64.
-This mainly consisted of mechanical work, changing size and pointer types to 64\,bits.
+To allow us to run applications relying on libc on wasm64, we had to port \ac{WASI} and wasi-libc to wasm64.
+This mainly consisted of mechanical work, changing size and pointer types from 32 to 64\,bits.
 
 To provide memory safety for heap allocations, we modified dlmalloc, the default allocator in wasi-libc.
-Before returning allocated memory to the user, we tag the memory.
-This has the additional effect of not only protecting adjacent allocations from being accessed via memory overflows, but also the allocator metadata itself.
-When memory is freed or reallocated, we untag the memory regions returned to the allocator.
-This provides temporal safety, even after freed memory is allocated again, as the tag for the new allocation will be chosen at random.
+This consisted of inserting calls to our builtin functions as necessary, creating memory segments and returning tagged pointers instead of returning the pointer to the just allocated piece of memory.
+This protects both allocator metadata and adjacent allocations from being accessed or modified through heap overflows.
+The allocator also ensures that segments are freed when freeing or reallocating memory, ensuring temporal safety.
 
-\section{WebAssembly Runtime Enhancements}
+\section{Wasmtime}
 \label{sec:wasm-runtime}
 
-Our implementation in the wasmtime runtime focuses on combining performance with security.
-In environments where hardware supports MTE, our new instructions are lowered to MTE instructions, leveraging the hardware's capabilities for memory safety.
+As our runtime to build our prototype, we chose wasmtime\footnote{\url{https://wasmtime.dev/}}, a WebAssembly runtime with a focus speed and correctness, written in Rust, with its own optimizing compiler, cranelift\footnote{\url{https://cranelift.dev/}}, which also features its own \ac{IR}, \ac{CLIF}.
+
+We modified wasmtime, as well as its supporting libraries, and extended it with support to parse and process the memory safety extension described in \cref{sec:wasm-extension}.
+We added support for \ac{MTE} in the form of new instructions and lowering rules to cranelift, allowing wasmtime to generate \ac{MTE} instructions when compiling for a target that supports them.
+
+By default, the memory is tagged with one of the tags described in \cref{tab:default-tag}.
+
+\begin{table}
+  \centering
+  \begin{tabular}{c | c || c}
+    \textbf{Memory Safety} & \textbf{MTE Sandboxing} & \textbf{Default Tag} \\
+    \hline
+    no & no & $t \in \{\,0\,\}$ \\
+    yes & no & $t \in \{\,0\,\}$ \\
+    yes & yes & $t \in \{\,1\,\}$ \\
+    no & yes & $t \in \{\,1, \dots, 15\,\}$
+  \end{tabular}
+  \caption{Default tag for the linear memory}
+  \label{tab:default-tag}
+\end{table}
+
+For \ac{MTE}, we store the logical tag directly in the \ac{WASM} index.
+When assigning the allocation tag, however, we need to translate the index to an address.
+Before assigning tags, we also need to perform explicit bounds checks, otherwise we would allow untrusted guest code to set arbitrary tags in the processes address space.
+In the following paragraphs we will describe how we lower each of our instructions to an \ac{MTE} backend.
+
+\paragraph{\lstinline[style=customwasm]{segment.new}} To create a new segment, we (1) check that the requested segment is inside the linear memory for the guest, (2) generate a random logical tag and insert it into the index, and (3) set the allocation tag for the segment.
+This involves generating a loop that iterates over the size of the segment and setting the tag using \texttt{stzg}, which also zeroes the memory.
+
+\paragraph{\lstinline[style=customwasm]{segment.set_tag}} To change ownership of a segment, we again (1) check that the requested segment is inside the linear memory for the guest and (2) set the new allocation tag for the segment.
+Here we don't need to create a new, random tag, as we are passed a predefined tag.
+
+\paragraph{\lstinline[style=customwasm]{segment.free}} To invalidate a segment, we (1) check that the requested segment is inside the linear memory for the guest and (2) set the default allocation tag for the segment.
+The default tag depends on the configuration and can be taken from \cref{tab:default-tag}.
+
+\paragraph{}
 We have implemented a number of optimizations to ensure our generated code runs efficiently.
-In the general case, we generate a loop over the memory region to be tagged.
-This loop, however, is unrolled to tag larger blocks of memory at once, and is unrolled to a fixed number of instructions, if the size of the memory region to be tagged is known at compile time.
+When setting the allocation tag for a segment, we generate a loop iterating over the size of the segment.
+If the size of the loop is known at compile time, we unroll the loop to tag a larger amount of tags per iteration to avoid branch instructions.
+This is only done up to a size of 160 bytes, which we chose as a tradeoff between code size and reducing the number of branch instructions executed.
+
+\paragraph{}
+If we are running the mode where both \ac{MTE} bounds checks and memory safety are enabled, we need a way to ensure only even tags are generated by instructions such as \texttt{irg} (\textbf{i}nsert \textbf{r}andom ta\textbf{g}) or \texttt{addg} (\textbf{add} ta\textbf{g}).
+This can be either specified as an optional immediate to the instruction via an exclude mask, or through an include mask via a \texttt{prctl} call, which sets the corresponding register in kernel space.
+We chose the latter option and set the include mask at startup time.
+
+% TODO: write about MTE sync/async mode? We always use sync mode

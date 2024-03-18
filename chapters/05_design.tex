@@ -89,13 +89,6 @@ As far as the runtime is concerned, as long as exploits are contained within the
     \label{fig:system-design-2}
 \end{figure}
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[scale=1]{figures/build/system-design-1}
-    \caption{Bounds checks are replaced with MTE}
-    \label{fig:system-design-1}
-\end{figure}
-
 Figure~\ref{fig:overview} presents an overview of \projectname{}.
 
 At build time, the unmodified C/C++ sources, along with a modified version of libc, are compiled using LLVM~\cite{lattner2004llvm}.
@@ -219,15 +212,15 @@ i64.sub
 global.set $__stack_pointer
 \end{lstlisting}
 
-\section{Heap Safety}
-\label{sec:heap-safety}
+\subsection{Heap Safety}
+\label{subsec:heap-safety}
 
 To provide heap safety, the memory allocator needs to be aware of segments.
 When allocating memory, the requested size is aligned to 16 bytes, and a segment is returned to the caller.
 This prevents overflows from corrupting allocator metadata or other memory segments.
 
-\section{Stack Safety}
-\label{sec:stack-safety}
+\subsection{Stack Safety}
+\label{subsec:stack-safety}
 
 For stack safety, we create segments from stack slots when entering a function.
 Before returning, all stack slots are untagged and reassigned to the stack frame.
@@ -288,7 +281,7 @@ Any attempt to use the value returned by \texttt{bar} is undefined behavior and 
 \noindent
 Our algorithm effectively balances the need for stack safety with performance and memory efficiency constraints.
 
-\section{Bounds Checks}
+\section{Hardware-Assisted Sandboxing}
 \label{sec:bounds-checks}
 
 WebAssembly runtimes ensure that applications remain within their allocated memory sandbox.
@@ -298,37 +291,40 @@ Accessing these inaccessible pages results in a segmentation fault, which is cau
 
 However, this strategy faces limitations in wasm64 due to the impracticality of mapping the entire 64-bit address space.
 This constraint necessitates the insertion of bounds checks, which can significantly degrade performance.
+% TODO: make sure the impact is actually shown.
 We demonstrate the impact of these checks on wasm64 execution speed in section~\ref{ch:eval}.
 
-In \todo{ref:fig\_design\_bounds\_checks}, we showcase an approach that utilizes memory tagging to replace traditional bounds checks in wasm64 environments.
-On module instantiation, the runtime assigns a predefined tag to the linear memory and the heap base address.
+In \cref{fig:system-design-sandboxing}, we showcase an approach that utilizes memory tagging to replace software-based bounds checls.
+On module instantiation, the runtime assigns a random tag to the linear memory and the heap base address.
 Memory access translation then involves adding this tagged heap base address to the accessed index.
-
-\subsubsection{Combining memory safety with MTE bounds checks}
 
 \begin{figure}[t]
     \centering
-    \includegraphics[scale=0.75]{figures/build/bounds-mem-safety}
+    \includegraphics[scale=1]{figures/build/system-design-1}
     \caption{Bounds checks are replaced with MTE}
-    \label{fig:system-design-mem-safety-bounds}
+    \label{fig:system-design-sandboxing}
 \end{figure}
 
-To combine these two approaches, it is important to not allow users to escape from the sandbox by forging tags but still benefit from the
-performance gained from removing bounds checks.
+However, we face a limitation in the number of sandboxes for this approach.
+Since \ac{MTE} only offers up to 16 distinct tags, we are limited to at most 15 different sandboxes within one process, as we need to reserve one tag for the runtime.
 
-There is two challenges we need to take care of.
+\subsection{Combining memory safety with MTE bounds checks}
+\label{subsec:combining-memory-safety-with-mte-bounds-checks}
+
+If we combine this sandboxing approach with our \ac{MTE}-backed \ac{WASM} extension, we need to ensure malicious programs cannot break out of the sandbox by forging or manipulating tags, while still retaining the performance benefit of \ac{MTE}-based sandboxing.
+
+There is two challenges we need to take care of:
 \begin{enumerate}
-    \item Adding a tagged user pointer to the heap base address should be performant and result in the cprrect tag for the respective memory.
+    \item Adding a tagged user pointer to the heap base address should be performant and result in the correct tag for the respective memory.
     \item It's crucial to prevent users from creating tags that enable access beyond their allocated memory sandbox.
 \end{enumerate}
 
-To circumvent these issues, designate the lowest tag bit to determine whether memory belongs to the runtime or to the linear memory.
-Inaccessible memory us tagged with 0, while the linear memory is initially tagged with the tag 1.
+We designate the lowest tag bit to determine whether memory belongs to the runtime or to the linear memory.
+Memory belonging to the runtime is tagged with the zero tag, while the linear memory is initially tagged with the tag 1.
 The remaining three tag bits are used for the memory safety features and can be generated by \texttt{segment.new}.
+This results in memory indices always being tagged with an even tag, but once we actually access memory, we do so with an odd tag.
+
 When tagging memory using these primitives, we set the lowest tag bit to 1 before tagging.
-Since the memory index is untrusted, an attacker may craft a value that overflows the tag bits when adding it to the heap base, resulting in a tag that allows accessing memory outside the linear memory.
-To prevent this, we need to set the lowest tag bit via a bitwise mask before each memory access.
-The code for this can be seen in listings~\ref{lst:generated-code-mem-access} and~\ref{lst:generated-code-mem-access}.
 
 \begin{lstlisting}[frame=h,style=customc,
     label={lst:generated-code-tagging}]
@@ -336,6 +332,18 @@ The code for this can be seen in listings~\ref{lst:generated-code-mem-access} an
 v0 = or tag, 0x0100_0000_0000_0000
 stzg v0, [address]
 \end{lstlisting}
+
+Memory accesses are translated by adding the tagged heap base to the tagged index, as can be seen in \cref{fig:system-design-mem-safety-bounds}.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[scale=0.75]{figures/build/bounds-mem-safety}
+    \caption{MTE-based bounds checks}
+    \label{fig:system-design-mem-safety-bounds}
+\end{figure}
+
+However, since the memory index is untrusted, an attacker may craft a value that overflows the tag bits when adding it to the heap base, resulting in a tag that allows accessing memory outside the linear memory.
+To prevent this, we need to set the lowest tag bit via a bitwise mask before each memory access, as can be seen below.
 
 \begin{lstlisting}[frame=h,style=customc,
     label={lst:generated-code-mem-access}]
