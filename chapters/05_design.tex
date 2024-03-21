@@ -138,7 +138,7 @@ The instructions are type-checked according to \cref{fig:typing-rules}.
 Following, we will describe the new instructions in detail.
 
 \begin{description}
-    \item[\texttt{segment.new}] Create a new memory segment.
+    \item[\texttt{segment.new}] Create a new, zeroed memory segment.
     This instruction takes two parameters, a memory index and a size.
     The instruction generates a new tag, assigns it to the piece of memory, and returns a tagged pointer that can be used to access the segment.
     \item[\texttt{segment.set\_tag}] Takes a memory index, a length and a tagged pointer and applies the tag from the tagged pointer to the memory segment located at the index with the passed length.
