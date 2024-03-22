@@ -1,7 +1,7 @@
 \chapter{Implementation}
 \label{ch:implementation}
 
-Our implementation of \projectname{} is integrated into the LLVM framework, wasi-libc, and the wasmtime WebAssembly runtime.
+Our implementation of our prototype is integrated into the LLVM framework, wasi-libc, and the wasmtime WebAssembly runtime.
 The following sections detail the specific modifications and extensions we made to each component, as well as some of the implementation choices and details to tackle specific problems.
 
 \section{LLVM}
@@ -45,7 +45,7 @@ In LLVM, we introduced a WASM-specific sanitizer pass that can be enabled via a 
 This sanitizer analyzes functions for stack allocations and applies padding and tagging to them, as discussed in \cref{subsec:stack-safety}.
 The pass runs after all optimizations, ensuring we do not block passes that might remove stack allocations, such as \texttt{mem2reg}.
 
-As WebAssembly does not support exceptions or C-style long jumps, we do not have to handle these special cases, which have been proven to be tricky to implement with tagged memory in the past.
+As WebAssembly does not support exceptions or C-style long jumps, we do not have to handle these special cases.
 
 \subsection{C extension}
 \label{subsec:c-extension}
@@ -72,7 +72,7 @@ void *my_malloc(unsigned long size) {
 \section{WASI Libc Modifications}
 \label{sec:wasi-libc}
 
-To allow us to run applications relying on libc on wasm64, we had to port \ac{WASI} and wasi-libc to wasm64.
+To allow us to run applications relying on libc on wasm64, we ported the \acf{WASI} and wasi-libc to wasm64.
 This mainly consisted of mechanical work, changing size and pointer types from 32 to 64\,bits.
 
 To provide memory safety for heap allocations, we modified dlmalloc, the default allocator in wasi-libc.
@@ -95,10 +95,10 @@ By default, the memory is tagged with one of the tags described in \cref{tab:def
   \begin{tabular}{c | c || c}
     \textbf{Memory Safety} & \textbf{MTE Sandboxing} & \textbf{Default Tag} \\
     \hline
-    no & no & $t \in \{\,0\,\}$ \\
-    yes & no & $t \in \{\,0\,\}$ \\
-    yes & yes & $t \in \{\,1\,\}$ \\
-    no & yes & $t \in \{\,1, \dots, 15\,\}$
+    No & No & $t \in \{\,0\,\}$ \\
+    Yes & No & $t \in \{\,0\,\}$ \\
+    Yes & Yes & $t \in \{\,1\,\}$ \\
+    No & Yes & $t \in \{\,1, \dots, 15\,\}$
   \end{tabular}
   \caption{Default tag $t$ for the linear memory}
   \label{tab:default-tag}
@@ -113,7 +113,7 @@ In the following paragraphs we will describe how we lower each of our instructio
 This involves generating a loop that iterates over the size of the segment and setting the tag using \texttt{stzg}, which also zeroes the memory.
 
 \paragraph{\lstinline[style=customwasm]{segment.set_tag}} To change ownership of a segment, we again (1) check that the requested segment is inside the linear memory for the guest and (2) set the new allocation tag for the segment.
-Here we don't need to create a new, random tag, as we are passed a predefined tag.
+Here we do not need to create a new, random tag, as we are passed a predefined tag.
 
 \paragraph{\lstinline[style=customwasm]{segment.free}} To invalidate a segment, we (1) check that the requested segment is inside the linear memory for the guest and (2) set the default allocation tag for the segment.
 The default tag depends on the configuration and can be taken from \cref{tab:default-tag}.

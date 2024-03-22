@@ -4,7 +4,6 @@
 
 \section{Experimental Setup}\label{sec:experimental-setup}
 
-\subsection{Testbed Configuration}\label{subsec:testbed-configuration}
 We conducted our benchmarks on a Google Pixel 8 equipped with a Google Tensor G3 chip, comprising 1\,$\times$\,Cortex-X3 (2.91\,GHz), 4\,$\times$\,Cortex-A715 (2.37\,GHz), and 4\,$\times$\,Cortex-A510 (1.7\,GHz) cores, with Memory Tagging Extension (MTE) enabled.
 To mitigate thermal throttling, we attached a cooling fan to the device.
 Additionally, we pinned benchmarks to the low-power Cortex-A510 cores, which significantly decreased thermal throttling and noise in our benchmarks. \todo{should we leave this in?}
@@ -38,7 +37,7 @@ The variants compared are detailed in Table \ref{tab:benchmark-variants}.
 \begin{figure*}[ht]
     \centering
     \includegraphics[width=\textwidth]{./plots/runtimes}
-    \caption{{PolyBench-C runtime overheads of {\projectname{}}. (a) Baseline. (b) Relative overhead of wasm64 with memory safety features. (c) Bounds checks implemented using MTE.}{}}
+    \caption{{PolyBench-C runtime overheads of our prototype. (a) Baseline. (b) Relative overhead of wasm64 with memory safety features. (c) Bounds checks implemented using MTE.}{}}
     \label{fig:runtime_overheads}
 \end{figure*}
 
@@ -54,7 +53,7 @@ With memory safety features disabled, and MTE employed for bounds checking, we r
 \begin{figure*}[ht]
     \centering
     \includegraphics[width=\textwidth]{./plots/mem-overhead}
-    \caption{{PolyBench-C memory overheads of {\projectname{}}. (a) Baseline. (b) Relative overhead of wasm64 with memory safety features. (c) Bounds checks implemented using MTE.}{}}
+    \caption{{PolyBench-C memory overheads of our prototype. (a) Baseline. (b) Relative overhead of wasm64 with memory safety features. (c) Bounds checks implemented using MTE.}{}}
     \label{fig:memory_overheads}
 \end{figure*}
 

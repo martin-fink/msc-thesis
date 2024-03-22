@@ -1,10 +1,12 @@
 \chapter{Design}
 \label{ch:design}
 
+\todo{write something here}
+
 \section{Threat Model}
 \label{sec:threat-model}
 
-In this threat model, we differentiate between two aspects of memory safety:
+In our threat model (\cref{fig:threat-model}), we differentiate between two aspects of memory safety:
 
 \begin{figure}
     \centering
@@ -26,10 +28,10 @@ In this threat model, we differentiate between two aspects of memory safety:
 \end{figure}
 
 \begin{description}
-    \item[Internal Memory Safety]: Ensures memory safety within the boundaries of a sandbox.
+    \item[Internal Memory Safety:] Ensures memory safety within the boundaries of a sandbox.
     Our point of view is from within a WebAssembly instance, we trust the runtime (and the host we are running on), but we do not trust external input.
     See \cref{fig:internal-mem-safety}
-    \item[External Memory Safety]: Maintains the memory safety of the sandbox itself against potentially malicious programs.
+    \item[External Memory Safety:] Maintains the memory safety of the sandbox itself against potentially malicious programs.
     Our point of view is from the runtime, we trust the platform we're running on, but not the WebAssembly programs we are executing.
     See \cref{fig:external-mem-safety}
 \end{description}
@@ -89,7 +91,7 @@ As far as the runtime is concerned, as long as exploits are contained within the
     \label{fig:system-design-2}
 \end{figure}
 
-Figure~\ref{fig:overview} presents an overview of \projectname{}.
+Figure~\ref{fig:overview} presents an overview of our prototype.
 
 At build time, the unmodified C/C++ sources, along with a modified version of libc, are compiled using LLVM~\cite{lattner2004llvm}.
 After optimizations, a stack sanitizer analyzes all functions, and inserts instrumentation as necessary.
@@ -101,7 +103,7 @@ LLVM's backend then generates WebAssembly binaries that can be deployed and exec
 We designed an extension to WebAssembly that provides primitives to the modified standard library and the stack sanitizer to guarantee memory safety for selected allocations.
 Our extension builds on top of wasm64, the 64\,bit variant of WebAssembly.
 We chose wasm64, as wasm64 uses a 64\,bit integer index type, with 48 of those bits being used to index memory.
-This allows utilizing 16 bits for metadata about the allocation.
+This allows utilizing 16 bits for metadata per pointer.
 
 For our extension, we introduce the notion of abstract segments and tagged pointers.
 We introduce three new instructions that allow creating abstract segments and tagged pointers from raw pointers.
@@ -135,13 +137,13 @@ The instructions are type-checked according to \cref{fig:typing-rules}.
 \end{figure}
 
 \paragraph{}
-Following, we will describe the new instructions in detail.
+In the following paragraph, we will describe the new instructions in detail.
 
 \begin{description}
     \item[\texttt{segment.new}] Create a new, zeroed memory segment.
     This instruction takes two parameters, a memory index and a size.
     The instruction generates a new tag, assigns it to the piece of memory, and returns a tagged pointer that can be used to access the segment.
-    \item[\texttt{segment.set\_tag}] Takes a memory index, a length and a tagged pointer and applies the tag from the tagged pointer to the memory segment located at the index with the passed length.
+    \item[\texttt{segment.set\_tag}] Takes a memory index, a length, and a tagged pointer and applies the tag from the tagged pointer to the memory segment located at the index with the passed length.
     This can be used to move ownership from one segment to another, or to merge segments.
     \item[\texttt{segment.free}] Invalidates a segment by reassigning a new, implementation defined tag.
     This instruction takes two parameters, a memory index and a length.
@@ -151,7 +153,7 @@ Following, we will describe the new instructions in detail.
 We also modify the semantics of existing load and store instructions.
 They still take an integer as an index, but we introduce provenance to integers, which is tracked using the unused 16 upper bits in pointers.
 Untagged indices may be used to access memory that has not been claimed as a segment.
-If a segment is accessed, the runtime will check that the tagged pointer is allowed to access the segment, i.e.\ the index is the index returned by the \texttt{segment.new} instruction.
+If a segment is accessed, the runtime will check that the tagged pointer is allowed to access the segment, i.e.\ the metadata matches the metadata created by the \texttt{segment.new} instruction.
 If this is not the case, a trap is thrown.
 
 This has the important consequence that unmodified code will continue working as-is, as load and store instructions will transparently handle both tagged and untagged indices.
@@ -161,15 +163,13 @@ Stack accesses can be analyzed to instrument only accesses that are accessed usi
 
 \paragraph{Alignment}
 All segments are aligned to 16 bytes, which corresponds to the alignment of MTE (see \cref{subsec:mte}).
-This is an implementation choice, that can and will be changed once we support additional implementations.
+This is an implementation choice, that may be changed once we support additional implementations.
 More detail can be found in \cref{sec:future-work}.
 
 \subsection{Example}
 \label{subsec:example}
 
 We will demonstrate our \ac{WASM} extension using the following C snippet, which allocates 64 bytes on the stack.
-This requires the compiler to instrument the stack allocation, creating a new segment, and freeing the segment before returning to the caller, i.e. tagging the stack slot with the stack frame's tag.
-
 \begin{lstlisting}[frame=h,style=customc,
     label={lst:wasm-example-c}]
 void foo() {
@@ -179,10 +179,8 @@ void foo() {
 }
 \end{lstlisting}
 
-When compiling to \ac{WASM}, the compiler allocates the slot on the stack, decrementing the global \lstinline[style=customwasm]{$__stack_pointer} acting as the stack pointer.
-Then, a new segment of size 64 is created and the tagged pointer to it is stored in the local \lstinline[style=customwasm]{$buf}.
-Before returning, the segment is retagged using the stack pointers tag, i.e. restoring the previous tag and allowing access through the stack pointer.
-Then, the stack pointer is reset, freeing the stack frame.
+This requires the compiler to instrument the stack allocation, crete a new segment, and free the segment before returning to the caller, i.e.\ giving ownership of the stack slot back to the stack frame.
+We show the resulting code below.
 
 \begin{lstlisting}[frame=h,style=customwasm,
     label={lst:wasm-example}]
@@ -192,7 +190,7 @@ i64.const 64
 i64.sub
 global.tee $__stack_pointer
 
-;; tag the segment
+;; create a segment
 i64.const 64
 segment.new
 local.set $buf
@@ -211,6 +209,11 @@ i64.const 64
 i64.sub
 global.set $__stack_pointer
 \end{lstlisting}
+
+The compiler allocates the slot for \lstinline[style=customc]{buf} on the stack, decrementing the global \lstinline[style=customwasm]{$__stack_pointer} acting as the stack pointer.
+Then, a new segment of size 64 is created and the tagged pointer to it is stored in the local \lstinline[style=customwasm]{$buf}.
+Before returning, the segment is retagged using the stack pointers tag, i.e.\ restoring the previous tag and allowing access through the stack pointer.
+Then, the stack pointer is reset, freeing the stack frame.
 
 \subsection{Heap Safety}
 \label{subsec:heap-safety}
@@ -237,10 +240,9 @@ We iterate over all stack allocations and check if the allocation (a) escapes th
     \State $allocsToInstrument \gets \emptyset$
     \For{$alloc \in allocations$}
         \If{escapes($alloc$)}
-            \State $allocsToInstrument$.push($alloc$)
-        \EndIf
-        \If{isUsedByUnsafeGEP($alloc$)}
-            \State $allocsToInstrument$.push($alloc$)
+            \State $allocsToInstrument \gets allocsToInstrument \cup \{\,alloc\,\}$
+        \ElsIf{isUsedByUnsafeGEP($alloc$)}
+            \State $allocsToInstrument \gets allocsToInstrument \cup \{\,alloc\,\}$
         \EndIf
     \EndFor
 
@@ -275,11 +277,11 @@ In the code example above, \texttt{i} is safe, as its address is not used in a p
 The variables \texttt{bytes\_read} and \texttt{buf} are determined to be unsafe, as their address escapes.
 Additionally, \texttt{buf} is accessed using an untrusted index.
 
-In function \texttt{bar}, \texttt{buf} also needs to be instrumented, as it again escapes.
-Any attempt to use the value returned by \texttt{bar} is undefined behavior and will be caught by our instrumentation, preventing difficult to debug bugs or potential vulnerabilities.
+In function \texttt{bar}, \texttt{buf} also needs to be instrumented, as it escapes: the pointer to it is returned to the caller.
+Any attempt to dereference the value returned by \texttt{bar} is undefined behavior and will be caught by our instrumentation, preventing difficult to debug bugs or potential vulnerabilities.
 
 \noindent
-Our algorithm effectively balances the need for stack safety with performance and memory efficiency constraints.
+This algorithm effectively balances the need for stack safety with performance and memory efficiency constraints.
 
 \section{Hardware-Assisted Sandboxing}
 \label{sec:bounds-checks}
@@ -294,7 +296,7 @@ This constraint necessitates the insertion of bounds checks, which can significa
 % TODO: make sure the impact is actually shown.
 We demonstrate the impact of these checks on wasm64 execution speed in section~\ref{ch:eval}.
 
-In \cref{fig:system-design-sandboxing}, we showcase an approach that utilizes memory tagging to replace software-based bounds checls.
+In \cref{fig:system-design-sandboxing}, we showcase an approach that utilizes memory tagging to replace software-based bounds checks.
 On module instantiation, the runtime assigns a random tag to the linear memory and the heap base address.
 Memory access translation then involves adding this tagged heap base address to the accessed index.
 
@@ -313,7 +315,7 @@ Since \ac{MTE} only offers up to 16 distinct tags, we are limited to at most 15 
 
 If we combine this sandboxing approach with our \ac{MTE}-backed \ac{WASM} extension, we need to ensure malicious programs cannot break out of the sandbox by forging or manipulating tags, while still retaining the performance benefit of \ac{MTE}-based sandboxing.
 
-There is two challenges we need to take care of:
+There are two challenges we need to take care of:
 \begin{enumerate}
     \item Adding a tagged user pointer to the heap base address should be performant and result in the correct tag for the respective memory.
     \item It's crucial to prevent users from creating tags that enable access beyond their allocated memory sandbox.

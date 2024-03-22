@@ -2,9 +2,10 @@
 \label{ch:overview}
 
 WebAssembly provides defences against a whole class of safety issues.
-The lack of unstructured control flows, e.g. jumps to dynamic addresses, and indirect calls through typed and checked tables prevent a whole class of memory safety issues such as return-orentied-programming (ROP) or type confusion when calling function pointers.
+The lack of unstructured control flows, e.g.\ jumps to dynamic addresses, and indirect calls through typed and checked tables prevent a whole class of memory safety issues such as \ac{ROP} or type confusion when calling function pointers.
 Memory accesses are guaranteed to not escape its assigned linear memory.
 This is implemented either using explicit bounds checks by inserting a branch before each load/store, that compares the index being accessed with the size of the memory.
+
 As WebAssembly indices are only 32\,bits wide, when running on 64\,bit hosts, the WebAssembly runtime can request virtual guard pages, which will not be allocated as physical pages.
 These guard pages cover all memory indexable with a 32\,bit index, and are marked as inaccessible.
 Only the accessible memory is marked as such.
@@ -18,11 +19,10 @@ This incurs a significant overhead, as we show in section~\ref{sec:eval-wasm32-w
 
 % TODO: better title?
 \paragraph{Memory Safety within WebAssembly programs}
-While WebAssembly provides these security guarantees that prevent return-oriented programming (ROP) or sandbox escapes, programs compiled to WebAssembly still suffer from classical memory safety errors such as buffer overflows or use-after-frees.
+While WebAssembly provides these security guarantees that prevent \ac{ROP}-based attacks or sandbox escapes, programs compiled to WebAssembly still suffer from classical memory safety errors such as buffer overflows or use-after-frees.
 This is critical for complex programs processing untrusted input, such as image or video processing applications.
 
-We present \projectname{}, an end-to-end solution to provide efficient spatial and temporal memory safety guarantees for programs compiled to WebAssembly.
-We propose a minimal extension to the WebAssembly instruction set, with primitives tailored to tagged memory, but still general enough so they can be implemented using different types of hardware extensions or even in software.
-\projectname{} implements our proposed extension utilizing LLVM and wasmtime.
+In this thesis, we propose a minimal extension to the WebAssembly instruction set to provide efficient spatial and temporal memory safety guarantees, with primitives tailored to tagged memory, but still general enough, so they can be implemented using different types of hardware extensions or even in software.
+Our prototype implements our proposed extension utilizing LLVM and wasmtime.
 We also present a technique to eliminate software-based bounds checks using MTE for wasm64 by tagging the linear memory accessible by untrusted user code with a different tag than the runtimes memory, which should not be accessed by WebAssembly code directly.
 This allows running wasm64 without the large overhead of explicit bounds checks on MTE hardware.
