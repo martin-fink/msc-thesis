@@ -83,6 +83,7 @@ In contrast, replacing bounds checks with MTE, which necessitates tagging the en
 We evaluated the performance of different characteristics of \ac{MTE} as implemented on the Tensor G3 chip.
 All the programs used to measure results in this section are implemented in Rust and available on GitHub\footnote{\url{https://github.com/martin-fink/mte-stg-bench}}.
 As our benchmarking library we used criterion\footnote{\url{https://github.com/bheisler/criterion.rs}}.
+After each benchmarking run, we let the device cool down for 30\,seconds to prevent throttling.
 
 \subsection{Tagging Primitives}
 \label{subsec:tagging-primitives}
@@ -139,6 +140,6 @@ Asynchronous mode is closer to the baseline with an overhead of 1\%, 3.7\%, and 
 \begin{figure}[h]
     \centering
     \input{plots/sync-async.pgf}
-    \caption{Runtime of \texttt{memset} of 128\,MiB of memory using different \ac{MTE} modes.}
+    \caption{Runtime of \texttt{memset} on 128\,MiB of memory using different \ac{MTE} modes.}
     \label{fig:sync-async-performance}
 \end{figure}
