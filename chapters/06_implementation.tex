@@ -87,6 +87,7 @@ As our runtime to build our prototype, we chose wasmtime\footnote{\url{https://w
 
 We modified wasmtime, as well as its supporting libraries, and extended it with support to parse and process the memory safety extension described in \cref{sec:wasm-extension}.
 We added support for \ac{MTE} in the form of new instructions and lowering rules to cranelift, allowing wasmtime to generate \ac{MTE} instructions when compiling for a target that supports them.
+We run in \ac{MTE} synchronous mode to ensure memory safety violations are caught and stopped before their effects become observable to either the violating or any other process.
 
 By default, the memory is tagged with one of the tags described in \cref{tab:default-tag}.
 
@@ -140,4 +141,4 @@ If we are running the mode where both \ac{MTE} bounds checks and memory safety a
 This can be either specified as an optional immediate to the instruction via an exclude mask, or through an include mask via a \texttt{prctl} call, which sets the corresponding register in kernel space.
 We chose the latter option and set the include mask at startup time.
 
-% TODO: write about MTE sync/async mode? We always use sync mode
+

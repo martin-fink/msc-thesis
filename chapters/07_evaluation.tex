@@ -30,7 +30,7 @@ As of the date of writing, this is the sole commercially available device featur
 \subsection{Benchmark Variants}\label{subsec:benchmark-variants}
 The benchmarks utilized were from the Polybench-C suite.
 \todo{add more real-world benchmarks}
-The variants compared are detailed in Table \ref{tab:benchmark-variants}.
+The variants compared are detailed in \cref{tab:benchmark-variants}.
 
 \section{Performance Overheads}
 
@@ -80,11 +80,16 @@ In contrast, replacing bounds checks with MTE, which necessitates tagging the en
 \section{MTE Performance evaluation}
 \label{sec:mte-performance-evaluation}
 
+We evaluated the performance of different characteristics of \ac{MTE} as implemented on the Tensor G3 chip.
+All the programs used to measure results in this section are implemented in Rust and available on GitHub\footnote{\url{https://github.com/martin-fink/mte-stg-bench}}.
+As our benchmarking library we used criterion\footnote{\url{https://github.com/bheisler/criterion.rs}}.
+
+\subsection{Tagging Primitives}
+\label{subsec:tagging-primitives}
+
 We evaluated the performance of the different types of instructions to set the tag for a segment of memory available in EL0 (user space) with the combinations described in \cref{tab:stg-instructions}.
 Here, instruction refers to the instruction being used to set the tag and granule size refers to the size of memory being tagged with a single instruction.
 The instructions \texttt{stzg} and \texttt{stgp} implicitly set the granule to zero, while we have to use an explicit memset for other instructions.
-We implemented the benchmark program in Rust\footnote{\url{https://github.com/martin-fink/mte-stg-bench}}.
-As our benchmarking library we used criterion\footnote{\url{https://github.com/bheisler/criterion.rs}}.
 
 \begin{table}[h]
     \centering
@@ -106,7 +111,7 @@ As our benchmarking library we used criterion\footnote{\url{https://github.com/b
     \label{tab:stg-instructions}
 \end{table}
 
-We ran the benchmark on our testbed (see \cref{subsec:testbed-configuration}) tagging a 128\,MiB memory region.
+We ran the benchmark on our testbed (see \cref{sec:experimental-setup}) tagging a 128\,MiB memory region.
 Before each run, we requested a fresh piece of memory with \texttt{mmap} and ran the specified configuration to prevent interference through already filled CPU caches.
 
 \begin{figure}[h]
@@ -124,4 +129,16 @@ Both \texttt{stzg} and \texttt{stgp} are only slightly slower than a raw memset,
 Surprisingly, \texttt{st2g} is only slighly faster than \texttt{stg}.
 We suspect \texttt{st2g} translates to roughly the same microops as two \texttt{stg} instructions do, except alignment checks and register write-backs, but were not able to confirm that.
 
+\subsection{Synchronous and Asynchronous Mode}
+\label{subsec:synchronous-and-asynchronous-mode}
 
+We evaluated the performance of sequential memory accesses with MTE disabled and enabled using synchronous mode and asynchronous mode, on each type of CPU core on the Pixel 8.
+In \cref{fig:sync-async-performance} we see that with synchronous mode, \texttt{memset} is 11.5\%, 8.9\%, and 13.2\% slower on the respective cores compared to the baseline with \ac{MTE} disabled.
+Asynchronous mode is closer to the baseline with an overhead of 1\%, 3.7\%, and 6.1\% respectively.
+
+\begin{figure}[h]
+    \centering
+    \input{plots/sync-async.pgf}
+    \caption{Runtime of \texttt{memset} of 128\,MiB of memory using different \ac{MTE} modes.}
+    \label{fig:sync-async-performance}
+\end{figure}
