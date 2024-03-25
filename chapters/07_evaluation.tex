@@ -27,10 +27,9 @@ Each performance test was run on each CPU type available on the Tensor G3 chip b
     \label{tab:benchmark-variants}
 \end{table}
 
-\subsection{Benchmark Variants}\label{subsec:benchmark-variants}
-The benchmarks utilized were from the Polybench-C suite.
-\todo{add more real-world benchmarks}
-The variants compared are detailed in \cref{tab:benchmark-variants}.
+\subsection{Benchmark Variants}
+\label{subsec:benchmark-variants}
+We ran the benchmarks from the PolyBench/C 3.2 suite~\cite{polybenchc}.
 
 \section{Performance Overheads}
 \label{sec:performance-overheads}
@@ -38,11 +37,11 @@ The variants compared are detailed in \cref{tab:benchmark-variants}.
 \begin{figure}[ht]
     \centering
     \input{plots/runtimes-all.pgf}
-    \caption{Polybench-C runtime overheads of different configurations described in \cref{tab:benchmark-variants}, normalized to wasm64.}
+    \caption{PolyBench/C runtime overheads of different configurations described in \cref{tab:benchmark-variants}, normalized to wasm64.}
     \label{fig:runtime-overheads-combined}
 \end{figure}
 
-\Cref{fig:runtime-overheads-combined} illustrates the mean runtime overheads for PolyBench-C benchmarks for each CPU core available on the Tensor G3 chip.
+\Cref{fig:runtime-overheads-combined} illustrates the mean runtime overheads for PolyBench/C benchmarks for each CPU core available on the Tensor G3 chip.
 We can see that, compared to wasm64, our memory safety extension has a mean overhead of 5.8 and 4.9\,\% on the two out-of-order high performance cores.
 On the in-order Cortex-A510, we see an overhead of \todo{x}\,\%.
 Generally we see that the overhead of bounds checks through the switch from wasm32 to wasm64 is lower on the out-of-order cores, as those can speculate bounds checks, while the in-order cores cannot.
@@ -54,12 +53,17 @@ This overhead is especially noticeable for short-running modules that require la
 Combining both \ac{MTE} bounds and \ac{MTE} memory safety, we see a slight increase from just \ac{MTE} bounds, that is smaller than the jump from wasm64 to memory safety.
 This is that we have already paid for the \ac{MTE} overhead, the overhead we are seeing here is the overhead resulting in additional tagging instructions.
 
+We could decrease the overhead even further by switching to \ac{MTE} async mode, which poses a lower overhead, compared to sync mode (see \cref{subsec:synchronous-and-asynchronous-mode}).
+However, this dramatically reduces the security guarantees provided by \ac{MTE}, as illegal writes and reads may become observable.
+This disqualifies async \ac{MTE} for bounds checking of \ac{WASM} sandboxes, as attackers may carefully craft malicious code to escape their sandbox.
+For the memory safety extension, users may decide the additional risk is worth the reduced overhead, e.g., when the memory safety extension is not used as a primary defense mechanism, but as a second layer or to find bugs in the wild.
+
 \section{Memory Overheads}\label{sec:memory-overheads}
 
 \begin{figure*}[ht]
     \centering
     \includegraphics[width=\textwidth]{./plots/mem-overhead}
-    \caption{{PolyBench-C memory overheads of our prototype. (a) Baseline. (b) Relative overhead of wasm64 with memory safety features. (c) Bounds checks implemented using MTE.}{}}
+    \caption{{PolyBench/C memory overheads of our prototype. (a) Baseline. (b) Relative overhead of wasm64 with memory safety features. (c) Bounds checks implemented using MTE.}{}}
     \label{fig:memory_overheads}
 \end{figure*}
 
@@ -75,13 +79,6 @@ In contrast, replacing bounds checks with MTE, which necessitates tagging the en
 
 
 \todo{insert evaluation here}
-
-
-\section{Overhead of wasm32}
-\label{sec:eval-wasm32-wasm64}
-
-\todo{insert evaluation here}
-
 
 \section{MTE Performance evaluation}
 \label{sec:mte-performance-evaluation}
