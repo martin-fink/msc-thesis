@@ -41,7 +41,7 @@ entry:
 \subsection{LLVM Sanitizer Pass}
 \label{subsec:llvm-sanitizer-pass}
 
-In LLVM, we introduced a WASM-specific sanitizer pass that can be enabled via a compiler flag, designed to provide memory safety for stack allocations when compiling to WebAssembly.
+In LLVM, we introduced a \ac{WASM}-specific sanitizer pass that can be enabled via a compiler flag, designed to provide memory safety for stack allocations when compiling to WebAssembly.
 This sanitizer analyzes functions for stack allocations and applies padding and tagging to them, as discussed in \cref{subsec:stack-safety}.
 The pass runs after all optimizations, ensuring we do not block passes that might remove stack allocations, such as \texttt{mem2reg}.
 
