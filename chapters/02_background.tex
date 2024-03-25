@@ -122,7 +122,7 @@ The extension provides three instructions for signing pointers, authenticating, 
 Signed pointers are invalid and cannot be used to address memory.
 They are created using the \texttt{pac*} instructions.
 Before being used, the signature needs to be removed.
-This happens either with the \texttt{aut*} instructions, which remove the signature if it is valid, or produce a pointer that will trap when used if the signature does not match the address.
+This happens either with the \texttt{aut*} instructions, which remove the signature if it is valid or produce a pointer that will trap when used if the signature does not match the address.
 The extension provides \texttt{strip} instructions to remove the signature regardless of whether it is valid.
 
 \paragraph{} MTE and PAC can be combined at the cost of bits available for the PAC signature.
