@@ -5,22 +5,22 @@
 \section{Experimental Setup}\label{sec:experimental-setup}
 
 We conducted our benchmarks on a Google Pixel 8 equipped with a Google Tensor G3 chip, comprising 1\,$\times$\,Cortex-X3 (2.91\,GHz), 4\,$\times$\,Cortex-A715 (2.37\,GHz), and 4\,$\times$\,Cortex-A510 (1.7\,GHz) cores, with Memory Tagging Extension (MTE) enabled.
-To mitigate thermal throttling, we attached a cooling fan to the device.
-Additionally, we pinned benchmarks to the low-power Cortex-A510 cores, which significantly decreased thermal throttling and noise in our benchmarks. \todo{should we leave this in?}
 As of the date of writing, this is the sole commercially available device featuring MTE.
+To mitigate thermal throttling, we attached a cooling fan to the device.
+Each performance test was run on each CPU type available on the Tensor G3 chip by pinning to a single respective core.
 
 \begin{table}[ht]
     \centering
     \small
     \begin{tabular}{c || c c c}
         \hline
-        \textbf{Variant} & \textbf{64-bit} & \textbf{memsafe} & \textbf{bounds-chk} \\
+        \textbf{Variant} & \textbf{Pointer Width} & \textbf{Memory Safety} & \textbf{MTE Bounds Checks} \\
         \hline
-        wasm32           & No              & No               & No                  \\
-        wasm64           & Yes             & No               & No                  \\
-        mem-safety       & Yes             & Yes              & No                  \\
-        mte-bounds       & Yes             & No               & Yes                 \\
-        all              & Yes             & Yes              & Yes                 \\
+        wasm32     & 32\,bit & No  & No  \\
+        wasm64     & 64\,bit & No  & No  \\
+        mem-safety & 64\,bit & Yes & No  \\
+        mte-bounds & 64\,bit & No  & Yes \\
+        combined   & 64\,bit & Yes & Yes \\
         \hline
     \end{tabular}
     \caption{Benchmarking Variants}
@@ -33,20 +33,26 @@ The benchmarks utilized were from the Polybench-C suite.
 The variants compared are detailed in \cref{tab:benchmark-variants}.
 
 \section{Performance Overheads}
+\label{sec:performance-overheads}
 
-\begin{figure*}[ht]
+\begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth]{./plots/runtimes}
-    \caption{{PolyBench-C runtime overheads of our prototype. (a) Baseline. (b) Relative overhead of wasm64 with memory safety features. (c) Bounds checks implemented using MTE.}{}}
-    \label{fig:runtime_overheads}
-\end{figure*}
+    \input{plots/runtimes-all.pgf}
+    \caption{Polybench-C runtime overheads of different configurations described in \cref{tab:benchmark-variants}, normalized to wasm64.}
+    \label{fig:runtime-overheads-combined}
+\end{figure}
 
-Figure~\ref{fig:runtime_overheads} illustrates the runtime overheads for PolyBench-C benchmarks.
-The mean runtime compared to the baseline for the memory safety implementation is 100.8\,\%, with a maximum of 109.4\%.
-With memory safety features disabled, and MTE employed for bounds checking, we reach a median runtime of 70.9\% relative to the baseline, with minimum and maximum runtimes of 40.4\% and 93.1\%, respectively.
+\Cref{fig:runtime-overheads-combined} illustrates the mean runtime overheads for PolyBench-C benchmarks for each CPU core available on the Tensor G3 chip.
+We can see that, compared to wasm64, our memory safety extension has a mean overhead of 5.8 and 4.9\,\% on the two out-of-order high performance cores.
+On the in-order Cortex-A510, we see an overhead of \todo{x}\,\%.
+Generally we see that the overhead of bounds checks through the switch from wasm32 to wasm64 is lower on the out-of-order cores, as those can speculate bounds checks, while the in-order cores cannot.
 
-\todo{combining bounds + memsafe}
+When we replace software-based bounds checks with \ac{MTE} bounds checks, we see the overhead largely disappearing.
+The remaining overhead can be explained through (1) the natural overhead that enabling \ac{MTE} sunc mode costs (see \cref{subsec:synchronous-and-asynchronous-mode}) and (2) that the linear memory needs to be tagged after allocation.
+This overhead is especially noticeable for short-running modules that require large amounts of linear memory.
 
+Combining both \ac{MTE} bounds and \ac{MTE} memory safety, we see a slight increase from just \ac{MTE} bounds, that is smaller than the jump from wasm64 to memory safety.
+This is that we have already paid for the \ac{MTE} overhead, the overhead we are seeing here is the overhead resulting in additional tagging instructions.
 
 \section{Memory Overheads}\label{sec:memory-overheads}
 
@@ -60,7 +66,7 @@ With memory safety features disabled, and MTE employed for bounds checking, we r
 We measure the memory overhead with GNU time.
 
 Memory tagging incurs overhead, particularly for small allocations due to the 16-byte alignment required for MTE.
-The MTE backend further introduces overhead, as observed in Figure \ref{fig:memory_overheads}, due to OS-level memory allocation requirements when MTE is active.
+The MTE backend further introduces overhead, as observed in \cref{fig:memory_overheads}, due to OS-level memory allocation requirements when MTE is active.
 Enabling our memory safety mechanism results in an average overhead of 1\%, with a range of -0.67\% to 23.5\%.
 In contrast, replacing bounds checks with MTE, which necessitates tagging the entire WebAssembly linear memory, leads to an average memory overhead of 0.26\%, with a range of -0.7\% to 1.4\%.
 
@@ -101,8 +107,8 @@ The instructions \texttt{stzg} and \texttt{stgp} implicitly set the granule to z
         \hline
         memset      & -             & -  & No  & Yes \\
         stg         & \texttt{stg}  & 16 & No  & No  \\
-        stgp        & \texttt{stgp} & 16 & Yes & No  \\
         st2g        & \texttt{st2g} & 32 & No  & No  \\
+        stgp        & \texttt{stgp} & 16 & Yes & No  \\
         stzg        & \texttt{stzg} & 16 & Yes & No  \\
         stg+memset  & \texttt{stg}  & 16 & No  & Yes \\
         st2g+memset & \texttt{st2g} & 32 & No  & Yes \\
@@ -135,7 +141,7 @@ We suspect \texttt{st2g} translates to roughly the same microops as two \texttt{
 
 We evaluated the performance of sequential memory accesses with MTE disabled and enabled using synchronous mode and asynchronous mode, on each type of CPU core on the Pixel 8.
 In \cref{fig:sync-async-performance} we see that with synchronous mode, \texttt{memset} is 11.5\%, 8.9\%, and 13.2\% slower on the respective cores compared to the baseline with \ac{MTE} disabled.
-Asynchronous mode is closer to the baseline with an overhead of 1\%, 3.7\%, and 6.1\% respectively.
+Asynchronous mode is closer to the baseline with an overhead of 0.9\%, 3.7\%, and 6.1\% respectively.
 
 \begin{figure}[h]
     \centering
