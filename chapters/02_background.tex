@@ -16,7 +16,7 @@ WebAssembly~\cite{haas2017bringing}, initially designed as an alternative, high-
     \item[Structured control flow:] In \ac{WASM}, unstructured control flow is not possible.
     \ac{WASM} uses indices into type- and bounds-checked tables instead of raw function pointers to make indirect function calls.
     For jump, \ac{WASM} provides a set of well-defined control flow constructs.
-    This reduces the attack surface of programs compiled to \ac{WASM} and aids code generation. \todo{explain why}
+    This reduces the attack surface of programs compiled to \ac{WASM} and aids code generation.
     \item[Stack machine:] Since compilation targets offer different sets of registers, \ac{WASM} does not expose registers but instead operates on a typed stack.
     The stack can be verified to be well-typed and compiled to register machines or \acp{IR} of optimizing compilers in a single pass without making assumptions about the number of available registers.
     These can vary between different architectures and runtimes, as they might reserve some registers for their own use (such as dedicating a register to hold some global state).

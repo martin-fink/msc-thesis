@@ -1,8 +1,8 @@
 \chapter{Implementation}
 \label{ch:implementation}
 
-Our implementation of our prototype is integrated into the LLVM framework, wasi-libc, and the wasmtime WebAssembly runtime.
-The following sections detail the specific modifications and extensions we made to each component, as well as some of the implementation choices and details to tackle specific problems.
+We implemented our prototype in the LLVM framework, wasi-libc, and the wasmtime WebAssembly runtime.
+The following sections detail the specific modifications and extensions we made to each component and some implementation choices and details to tackle specific problems.
 
 \section{LLVM}
 \label{sec:llvm}
@@ -19,11 +19,11 @@ In the middle end, we introduced three new intrinsic functions that correspond a
   \item \lstinline[style=customc,language=llvm]{void @llvm.wasm.segment.set_tag(ptr, ptr, i64)}
   \item \lstinline[style=customc,language=llvm]{void @llvm.wasm.segment.free(ptr, i64)}
 \end{itemize}
-Calls to these intrinsic functions can be inserted by the frontend or a sanitizer pass.
-A function that allocates 32 bytes on the stack might be lowered to the following IR:
+The clang frontend or a sanitizer pass can insert calls to these intrinsic functions.
+The following listing shows how we lower a function that allocates 32 bytes on the stack to LLVM IR.
 
 \begin{lstlisting}[frame=h,style=customc,
-    label={lst:llvm-intrinsics},language=llvm]
+  label={lst:llvm-intrinsics},language=llvm]
 define hidden signext void @foo(i32 %index) {
 entry:
   %arr = alloca [32 x i8], align 16
@@ -50,8 +50,8 @@ As WebAssembly does not support exceptions or C-style long jumps, we do not have
 \subsection{C extension}
 \label{subsec:c-extension}
 
-To be able to create and manipulate segments manually, e.g.\ to build a segment-aware memory allocator, we need to expose some primitives to C.
-We do this by creating three builtin functions in clang that are lowered to intrinsic calls in LLVM.
+To create and manipulate segments manually, e.g., to build a segment-aware memory allocator, we need to expose some primitives to C.
+We do this via built-in functions that clang lowers to calls to the corresponding LLVM intrinsics.
 
 \begin{itemize}
   \item \lstinline[style=customc]{void *__builtin_wasm_segment_new(void *, unsigned long);}
@@ -75,15 +75,15 @@ void *my_malloc(unsigned long size) {
 To allow us to run applications relying on libc on wasm64, we ported the \acf{WASI} and wasi-libc to wasm64.
 This mainly consisted of mechanical work, changing size and pointer types from 32 to 64\,bits.
 
-To provide memory safety for heap allocations, we modified dlmalloc, the default allocator in wasi-libc.
-This consisted of inserting calls to our builtin functions as necessary, creating memory segments and returning tagged pointers instead of returning the pointer to the just allocated piece of memory.
+We modified dlmalloc, the default allocator in wasi-libc, to provide memory safety for heap allocations.
+This consisted of inserting calls to our built-in functions as necessary, creating memory segments, and returning tagged pointers instead of returning the pointer to the just allocated piece of memory.
 This protects both allocator metadata and adjacent allocations from being accessed or modified through heap overflows.
-The allocator also ensures that segments are freed when freeing or reallocating memory, ensuring temporal safety.
+The allocator also frees segments when freeing or reallocating memory, ensuring temporal safety.
 
 \section{Wasmtime}
 \label{sec:wasm-runtime}
 
-As our runtime to build our prototype, we chose wasmtime\footnote{\url{https://wasmtime.dev/}}, a WebAssembly runtime with a focus speed and correctness, written in Rust, with its own optimizing compiler, cranelift\footnote{\url{https://cranelift.dev/}}, which also features its own \ac{IR}, \ac{CLIF}.
+As our runtime to build our prototype, we chose wasmtime\footnote{\url{https://wasmtime.dev/}}, a WebAssembly runtime with a focus speed and correctness, written in Rust, with its optimizing compiler, cranelift\footnote{\url{https://cranelift.dev/}}, which also features its own \ac{IR}, \ac{CLIF}.
 
 \begin{figure}[t]
   \centering
@@ -92,10 +92,10 @@ As our runtime to build our prototype, we chose wasmtime\footnote{\url{https://w
   \label{fig:wasmtime-mte-impl}
 \end{figure}
 
-In \cref{fig:wasmtime-mte-impl} we can see an overview of our implementation of the memory safety extension as implemented in wasmtime using \ac{MTE}.
-We modified wasmtime, as well as its supporting libraries, and extended it with support to parse and process the memory safety extension described in \cref{sec:wasm-extension}.
+In \cref{fig:wasmtime-mte-impl}, we can see an overview of our implementation of the memory safety extension in wasmtime using \ac{MTE}.
+We modified wasmtime and its supporting libraries and extended it with support to parse and process the memory safety extension described in \cref{sec:wasm-extension}.
 We added support for \ac{MTE} in the form of new instructions and lowering rules to cranelift, allowing wasmtime to generate \ac{MTE} instructions when compiling for a target that supports them.
-We run in \ac{MTE} synchronous mode to ensure memory safety violations are caught and stopped before their effects become observable to either the violating or any other process.
+We run in \ac{MTE} synchronous mode to catch and stop memory safety violations before their effects become observable to the violating or any other process.
 
 By default, the memory is tagged with one of the tags described in \cref{tab:default-tag}.
 
@@ -114,24 +114,24 @@ By default, the memory is tagged with one of the tags described in \cref{tab:def
 \end{table}
 
 For \ac{MTE}, we store the logical tag directly in the \ac{WASM} index.
-When assigning the allocation tag, however, we need to translate the index to an address.
-Before assigning tags, we also need to perform explicit bounds checks, otherwise we would allow untrusted guest code to set arbitrary tags in the processes address space.
-In the following paragraphs we will describe how we lower each of our instructions to an \ac{MTE} backend.
+However, when assigning the allocation tag, we need to translate the index to an address.
+Before assigning tags, we also need to perform explicit bounds checks. Otherwise, we would allow untrusted guest code to set arbitrary tags in the process address space.
+In the following paragraphs, we will describe how we lower each of our instructions to an \ac{MTE} backend.
 
 \paragraph{\texttt{segment.new}} To create a new segment, we (1) check that the requested segment is inside the linear memory for the guest, (2) generate a random logical tag and insert it into the index, and (3) set the allocation tag for the segment.
 This involves generating a loop that iterates over the size of the segment and setting the tag using \texttt{stzg}, which also zeroes the memory.
 
 \paragraph{\texttt{segment.set\_tag}} To change ownership of a segment, we again (1) check that the requested segment is inside the linear memory for the guest and (2) set the new allocation tag for the segment.
-Here we do not need to create a new, random tag, as we are passed a predefined tag.
+Here, we do not need to create a new, random tag, as we have passed a predefined tag.
 
 \paragraph{\texttt{segment.free}} To invalidate a segment, we (1) check that the requested segment is inside the linear memory for the guest and (2) set the default allocation tag for the segment.
 The default tag depends on the configuration and can be taken from \cref{tab:default-tag}.
 
 \paragraph{}
-We have implemented a number of optimizations to ensure our generated code runs efficiently.
+We have implemented several optimizations to ensure our generated code runs efficiently.
 When setting the allocation tag for a segment, we generate a loop iterating over the size of the segment.
-If the size of the loop is known at compile time, we unroll the loop to tag a larger amount of tags per iteration to avoid branch instructions.
-This is only done up to a size of 160 bytes, which we chose as a tradeoff between code size and reducing the number of branch instructions executed.
+If the size of the loop is known at compile time, we unroll the loop to tag up to 160\,bytes per iteration to avoid branch instructions.
+We chose this tradeoff between code size and reducing the number of branch instructions executed.
 
 When setting an allocation tag, we have three choices:
 \begin{enumerate}
@@ -142,7 +142,7 @@ When setting an allocation tag, we have three choices:
 \end{enumerate}
 
 To ensure new segments are always zeroed, options 1) and 2) would require an additional memset.
-We benchmarked all four variants (see \cref{sec:mte-performance-evaluation}), and chose \texttt{stzg}, as it had the lowest overhead, while clobbering one less register compared to \texttt{stgp}.
+We benchmarked all four variants (see \cref{sec:mte-performance-evaluation}) and chose \texttt{stzg}, as it had the lowest overhead while clobbering one less register compared to \texttt{stgp}.
 
 \subsection{\ac{MTE} Sandboxing}
 \label{subsec:bounds-checks}
@@ -154,7 +154,7 @@ Memory access translation then involves adding this tagged heap base address to 
 Memory belonging to the runtime is always tagged with the zero tag.
 
 However, we face a limitation in the number of sandboxes for this approach.
-Since \ac{MTE} only offers up to 16 distinct tags, we are limited to at most 15 different sandboxes within one process, as we need to reserve one tag for the runtime.
+Since \ac{MTE} only offers up to 16 distinct tags, we are limited to up to 15 different sandboxes within one process, as we need to reserve one tag for the runtime.
 
 \begin{figure}[t]
   \centering
@@ -166,7 +166,7 @@ Since \ac{MTE} only offers up to 16 distinct tags, we are limited to at most 15 
 We can combine this approach with the memory safety extension by further restricting the number of sandboxes in one process and thus freeing up tag bits for the memory safety extension.
 For our prototype, we decided to allow just a single instance when combining \ac{MTE} bounds checks and the memory safety extension.
 We designate the lowest tag bit to determine whether memory belongs to the runtime or the linear memory.
-Since the memory belonging to the runtime is tagged with zero, the linear memory is tagged with the tag 1.
+Since we reserved the zero tag for the runtime, we tag the linear memory with the tag 1.
 The remaining three tag bits are used for the memory safety features and can be generated by \texttt{segment.new}.
 Thus, memory indices always have an even tag, while the actual memory locations have an odd tag.
 
@@ -175,17 +175,17 @@ There are two challenges we need to take care of:
   \item Adding a tagged user pointer to the heap base address should be performant and result in the correct tag for the respective memory.
   \item It is crucial to prevent users from creating tags that enable access beyond their allocated memory sandbox.
 \end{enumerate}
-However, we need to ensure adding an untrusted index to the heap base does not overflow and thus change the tag, allowing code to escape the sandbox.
+However, we need to ensure that adding an untrusted index to the heap base does not overflow and thus change the tag, allowing code to escape the sandbox.
 Thus, we need to mask the index before the address computation.
 
 Memory accesses are translated by adding the tagged heap base to the tagged index, as shown in \cref{fig:system-design-mem-safety-bounds}.
 However, since the memory index is untrusted, an attacker may craft a value that overflows the tag bits when adding it to the heap base, resulting in a tag that allows memory accesses outside the sandbox.
-To prevent this, we need to mask out the tag bits that are allocated for the runtime.
+To prevent this, we need to mask the tag bits allocated for the runtime.
 \Cref{fig:mte-bounds-checks} shows the masked bits when just \ac{MTE} bounds checking is enabled.
 In this case, we allocate all bits for the runtime and mask out the tag bits in the index.
-In \cref{fig:mte-bounds-checks-mem-safety} we see what happens in the case both \ac{MTE} bounds checking and memory safety are enabled.
-Here, we allocate the lowest bit for the runtime, while we leave the remaining three for the memory safety extension.
-In \cref{tab:tag-mask} we can see the mask used for each configuration.
+In \cref{fig:mte-bounds-checks-mem-safety}, we see what happens when both \ac{MTE} bounds checking and memory safety are enabled.
+Here, we allocate the lowest bit for the runtime while we leave the remaining three for the memory safety extension.
+In \cref{tab:tag-mask}, we can see the mask used for each configuration.
 
 \begin{table}
   \centering
@@ -222,7 +222,7 @@ In \cref{tab:tag-mask} we can see the mask used for each configuration.
 
 \paragraph{Excluding Tags from Random Tag Generation}
 If we are running with \ac{MTE} bounds checks enabled, we need a way to ensure to exclude certain tags from being generated by instructions such as \texttt{irg} (\textbf{i}nsert \textbf{r}andom ta\textbf{g}) or \texttt{addg} (\textbf{add} ta\textbf{g}).
-This can be either specified as an optional immediate to the instruction via an exclude mask, or through an include mask via a \texttt{prctl} call, which sets the corresponding register in kernel space.
+This can be either specified as an exclude mask via an immediate to the instruction or an include mask via a \texttt{prctl} call, which sets the corresponding register in kernel space.
 We chose the latter option and set the include mask at startup time.
 In \cref{tab:tag-include-mask}, we list the include masks and included tags for the instructions mentioned above.
 If the memory safety extension is disabled, none of these instructions will be emitted, so we do not need to exclude tags from being generated.
