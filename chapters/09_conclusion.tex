@@ -1,13 +1,42 @@
 \chapter{Conclusion}
 \label{ch:conclusion}
 
+In this thesis, we presented three pieces of work:
+(1) a minimally-invasive and adaptable \ac{WASM} extension to provide memory safety primitives to compilers and programmers,
+(2) an implementation consisting of (2a) a compiler toolchain integrated into LLVM, including a modified wasi-libc and allocator to provide spatial and temporal memory safety for the heap, an LLVM sanitizer pass to instrument stack allocations,
+(2b) an implementation in wasmtime, compiling and running the \ac{WASM} extension on \ac{MTE} hardware, and utilizing \ac{MTE} as a replacement for software-based bounds checks,
+(3) and an evaluation of our work and \ac{MTE} running on real devices.
+
 \section{Future Work}
 \label{sec:future-work}
 
-\todo{more backends, e.g. morello}
+\subsection{Additional Implementations}
+\label{subsec:additional-implementations}
 
-\todo{alignment}
+We have implemented a prototype based on \ac{MTE} for our memory safety extension.
+However, additional implementations exploring different extensions, such as ARM's \ac{TBI}, available from Armv8.0, would allow storing metadata in the top byte while performing access checks in software, similar to \ac{HWASAN}~\cite{serebryany2018memory}.
+Software-based implementations, while slower, would allow deploying the memory safety extension to more devices than possible using recent extensions, such as \ac{MTE}.
 
-\todo{increasing the number of sandboxes}
+Based on the ARM Morello board, we are working on an implementation utilizing \ac{CHERI}.
+Morello provides much more fine-grained checks and unlimited compartments but requires widening pointers to 128\,bits and moving from a fixed 16\,byte alignment for segments to a dynamic alignment, depending on the size of the segment.
+Additionally, as revoking capabilities is still an unsolved problem, temporal memory safety cannot be guaranteed.
+Exploring and comparing these tradeoffs will be part of our future work.
 
-\todo{combine mte + guard pages}
+\subsection{Backward Compatibility}
+\label{subsec:backward-compatibility}
+
+Currently, code compiled with the memory safety extension requires a modified runtime aware of this extension.
+We are exploring techniques to embed metadata about allocations in custom \ac{WASM} segments that are ignored by runtimes but are used to provide memory safety when running on a modified runtime.
+
+\subsection{Combining Guard Pages and \ac{MTE}}
+\label{subsec:combining-guard-pages-and-mte}
+
+Currently, we are limiting the number of sandboxes to 15, as we allocate the zero tag for the runtime and one tag per instance.
+One possibility to increase the number of sandboxes would be to combine \ac{MTE} with guard pages.
+
+\subsection{Pointer Authentication}
+\label{subsec:future-work-pac}
+
+In a previous Bachelor's thesis, \citeauthor{rehde2023wasm} worked on adding pointer authentication primitives to the \ac{WASM} extension, with an implementation using ARM's \ac{PAC}~\cite{rehde2023wasm}.
+This work can be extended to be emulated in software when \ac{PAC} primitives are not available.
+
