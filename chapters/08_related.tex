@@ -1,2 +1,30 @@
 \chapter{Related Work}
 \label{ch:related}
+
+\section{Memory Safety for WebAssembly}
+\label{sec:related-memory-safety-for-webassembly}
+
+This thesis builds upon existing efforts in the field of memory safety for \ac{WASM}.
+Here, we examine notable projects aiming to achieve similar goals and highlight the distinct contributions of our research.
+
+\subsection{MS-WASM}
+\label{subsec:ms-wasm}
+
+A significant project in this domain is MS-WASM, a memory safety extension for WASM introduced by \citeauthor*{disselkoen2019position} and further developed by \citeauthor*{michael2023mswasm}~\cite{disselkoen2019position,michael2023mswasm}.
+MS-WASM introduces a new \textit{segment memory} distinct from the linear memory, preventing accesses through arbitrary offsets.
+The segment memory relies on access through unforgeable \textit{handles}, akin to CHERI pointers~\cite{woodruff2014cheri}.
+
+\paragraph{Key Differences}
+This thesis adopts a different approach by enabling a gradual migration of memory segments into the linear memory.
+This preserves compatibility with unmodified code, as only the allocation of allocation has to be changed.
+Memory accesses are still performed through integers, not pointers.
+We do not implement intra-memory safety to allow implementation with \ac{MTE}, which uses colors for memory access control rather than the shading required for intra-object safety.
+Utilizing \ac{MTE} allows our implementation to run with significantly lower overhead on devices supporting this technology.
+
+\subsection{Pointer Authentication}
+\label{subsec:related-pointer-authentication}
+
+\citeauthor*{rehde2023wasm} has worked on implementing pointer authentication primitives~\cite{rehde2023wasm}.
+In their work, they add pointer authentication primitives backed by ARM's \ac{PAC} to the memory safety extension described in this thesis.
+This complements our work by providing additional protection mechanisms against pointer corruption.
+
