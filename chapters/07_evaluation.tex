@@ -43,8 +43,9 @@ We ran the benchmarks from the PolyBench/C 3.2 suite~\cite{polybenchc}.
 
 \Cref{fig:runtime-overheads-combined} illustrates the mean runtime overheads for PolyBench/C benchmarks for each CPU core available on the Tensor G3 chip.
 We can see that, compared to wasm64, our memory safety extension has a mean overhead of 5.8 and 4.9\,\% on the two out-of-order high performance cores.
-On the in-order Cortex-A510, we see an overhead of \todo{x}\,\%.
+On the in-order Cortex-A510, we see an overhead of just 1.0\,\%.
 Generally we see that the overhead of bounds checks through the switch from wasm32 to wasm64 is lower on the out-of-order cores, as those can speculate bounds checks, while the in-order cores cannot.
+This also explains the low overhead of our memory safety extension on the in-order cores, as we spend more time doing bounds checks compared to the in-order cores.
 
 When we replace software-based bounds checks with \ac{MTE} bounds checks, we see the overhead largely disappearing.
 The remaining overhead can be explained through (1) the natural overhead that enabling \ac{MTE} sunc mode costs (see \cref{subsec:synchronous-and-asynchronous-mode}) and (2) that the linear memory needs to be tagged after allocation.
