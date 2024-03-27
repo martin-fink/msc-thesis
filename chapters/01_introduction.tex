@@ -3,26 +3,24 @@
 \label{ch:intro}
 %-------------------------------------------------------------------------------
 
-In recent years, \ac{WASM}~\cite{haas2017bringing} has gained prominence as a versatile compilation target, catering not only to web-based applications but also to a broader spectrum of use cases.
+In recent years, \ac{WASM}~\cite{haas2017bringing} has gained prominence as a versatile compilation target, serving not only to web-based applications but also to a broader spectrum of use cases.
 At its core, \ac{WASM} is engineered to serve as an efficient compilation target for high-level, compiled languages such as C and C++.
-A fundamental aspect of its design is its linear, contiguous memory model.
-This model is instrumental in facilitating the straightforward compilation of these languages.
-Moreover, it plays a pivotal role in ensuring the performance efficiency of the execution process.
+A fundamental aspect of its design is its linear memory model, which is instrumental in allowing these languages to efficiently compile to \ac{WASM} and \ac{WASM} to efficiently compile to a wide variety of architectures.
 
 While WebAssembly provides a sandbox for the guest code, which protects the host and other guests from malicious or buggy code, it does not inherently prevent memory safety issues within an application's memory space.
-This limitation becomes particularly evident when compiling languages like C or C++, where there are no language-level guarantees to prevent these bugs.
+This limitation becomes particularly evident when compiling languages like C or C++, where there are no language-level guarantees to prevent these types of bugs.
 
-However, recent advancements in hardware, such as ARM's \ac{PAC} and \ac{MTE}, offer promising, high-performance solutions.
-These hardware extensions are designed to effectively address and rectify such memory safety concerns.
+Recent advancements in hardware, such as ARM's \ac{PAC} and \acf{MTE}, offer promising, high-performance solutions.
+These hardware extensions are designed to effectively address memory safety concerns.
 
-We introduce a comprehensive solution that leverages both \ac{MTE} and \ac{PAC} to address both spatial and temporal memory safety bugs in WebAssembly-compiled programs.
-Our approach requires no modification to the source code.
+We introduce an extension to \ac{WASM} to address both spatial and temporal memory safety bugs with a prototype implementation utilizing \ac{MTE} to implement the safety guarantees efficiently.
+Our approach requires no modification to the source code, as we provide a complete compiler toolchain and standard library that can be used to harden unmodified C/C++ programs.
 The core contributions of this thesis are outlined as follows:
 
 \begin{description}
-    \item[WebAssembly Extension:] We develop a minimal and generic extension to the WebAssembly instruction set, allowing for protected memory regions without code changes.
-    \item[Compiler Toolchain:] We develop a specialized compiler toolchain for unmodified C/C++ programs, optimized for efficiency with our WebAssembly extension.
-    \item[Runtime:] We extend wasmtime to add support for our WebAssembly extension and implement it by compiling the primitives to ARM \ac{MTE}.
-    \item[Bounds Checks with \ac{MTE}:] We leverage \ac{MTE} to eliminate expensive bounds checks for 64\,bit WebAssembly programs.
-    \item[Performance Evaluation:] We perform extensive evaluation of our implementation on ARM hardware, analyzing performance, memory overheads, and safety guarantees.
+    \item[WebAssembly Extension:] A minimal and generic extension to the WebAssembly instruction set, allowing for protected memory regions without code changes.
+    \item[Compiler Toolchain:] A compiler toolchain for unmodified C/C++ programs, providing spatial and temporal memory safety for stack and heap allocations.
+    \item[Runtime:] A \ac{WASM} runtime with support for our WebAssembly extension and modified \ac{WASM} compiler that utilizes ARM's \ac{MTE}.
+    \item[Bounds Checks with \ac{MTE}:] An implementation to eliminate slow software-based bounds checks for 64\,bit \ac{WASM} programs.
+    \item[Evaluation:] Evaluation of our implementation on ARM hardware, including performance and memory overheads and security guarantees, and \ac{MTE} as implemented in hardware.
 \end{description}
