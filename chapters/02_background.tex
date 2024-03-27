@@ -83,7 +83,7 @@ These provide important primitives that compilers or programmers can use to prov
 \begin{figure}[t]
     \centering
     \includegraphics[scale=1]{figures/build/pointer-aarch64}
-    \caption{Pointer layout on aarch64 in Linux with and without MTE and PAC enabled}
+    \caption{Pointer layout on aarch64 in Linux with and without \ac{MTE} and \ac{PAC} enabled}
     \label{fig:aarch64-pointer}
 \end{figure}
 
@@ -95,14 +95,14 @@ Hardware extensions such as \ac{MTE} (\cref{subsec:mte}) and \ac{PAC} (\cref{sub
 \label{subsec:mte}
 
 ARMs \Ac{MTE}, available from ArmV8.5, provides a building block to prevent spatial and temporal memory safety violations~\cite{ARM2019MTE}.
-MTE implements a lock-and-key mechanism where memory regions can be tagged with one of 16 distinct tags, and memory access is only allowed using pointers with the corresponding keys.
+\ac{MTE} implements a lock-and-key mechanism where memory regions can be tagged with one of 16 distinct tags, and memory access is only allowed using pointers with the corresponding keys.
 
 The locking mechanism is implemented by storing a 4\,bit tag in bits 56--59 of an address (referred to as the logical tag).
 Accordingly, a tag is assigned to memory with a granularity of 16\,bytes (referred to as the allocation tag).
 
-On Linux, each process can configure MTE by switching between the following modes:
+On Linux, each process can configure \ac{MTE} by switching between the following modes:
 \begin{itemize}
-    \item \textbf{Disabled:} MTE is disabled, and no tag checks are performed.
+    \item \textbf{Disabled:} \ac{MTE} is disabled, and no tag checks are performed.
     \item \textbf{Synchronous:}
     Tag mismatches cause a hardware fault on instruction retirement, a segmentation fault is delivered to the application.
     The faulting instruction cannot read the affected memory location, or the update is not observable in the case of writes.
@@ -125,8 +125,8 @@ Before being used, the signature needs to be removed.
 This happens either with the \texttt{aut*} instructions, which remove the signature if it is valid or produce a pointer that will trap when used if the signature does not match the address.
 The extension provides \texttt{strip} instructions to remove the signature regardless of whether it is valid.
 
-\paragraph{} MTE and PAC can be combined at the cost of bits available for the PAC signature.
-The exact layout of the PAC signature varies depending on the system.
+\paragraph{} \ac{MTE} and \ac{PAC} can be combined at the cost of bits available for the \ac{PAC} signature.
+The exact layout of the \ac{PAC} signature varies depending on the system.
 
 % TODO: write about LLVM?
 

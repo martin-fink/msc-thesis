@@ -198,8 +198,8 @@ while from != end {
 \end{figure}
 
 \begin{description}
-  \item[Temporarily Disable MTE:]
-  Disable MTE globally, copy memory and tags, then re-enable \ac{MTE}.
+  \item[Temporarily Disable \ac{MTE}:]
+  Disable \ac{MTE} globally, copy memory and tags, then re-enable \ac{MTE}.
   This compromises memory safety during the migration for other threads in the same process relying on \ac{MTE}
 
   \item[Copy data and tags:]
@@ -227,7 +227,7 @@ Since \ac{MTE} only offers up to 16 distinct tags, we are limited to up to 15 di
 \begin{figure}[t]
   \centering
   \includegraphics[scale=1]{figures/build/system-design-1}
-  \caption{Bounds checks using MTE}
+  \caption{Bounds checks using \ac{MTE}}
   \label{fig:system-design-sandboxing}
 \end{figure}
 

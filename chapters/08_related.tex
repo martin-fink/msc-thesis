@@ -40,12 +40,12 @@ This complements our work by providing additional protection mechanisms against 
 \section{MTE for Memory Safety}
 \label{sec:mte-for-memory-safety}
 
-A few memory allocators have implemented support for MTE, including:
+A few memory allocators have implemented support for \ac{MTE}, including:
 
 \begin{itemize}
     \item Scudo Hardened Allocator (used in Android): A security-oriented allocator providing defense mechanisms against heap-based vulnerabilities\footnote{\url{https://llvm.org/docs/ScudoHardenedAllocator.html}}.
     \item Chrome's PartitionAlloc: A partitioning allocator focusing on security and efficiency for multithreaded environments\footnote{\url{https://chromium.googlesource.com/chromium/src/+/master/base/allocator/partition\_allocator/}}
-    \item glibc's Ptmalloc: The GNU C library's standard memory allocator, with evolving experimental support for MTE\footnote{\url{https://ftp.gnu.org/gnu/glibc/}}.
+    \item glibc's Ptmalloc: The GNU C library's standard memory allocator, with evolving experimental support for \ac{MTE}\footnote{\url{https://ftp.gnu.org/gnu/glibc/}}.
 \end{itemize}
 
 \section{Memory Safety}

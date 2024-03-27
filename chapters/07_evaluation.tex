@@ -4,8 +4,8 @@
 
 \section{Experimental Setup}\label{sec:experimental-setup}
 
-We conducted our benchmarks on a Google Pixel 8 equipped with a Google Tensor G3 chip, comprising 1\,$\times$\,Cortex-X3 (2.91\,GHz), 4\,$\times$\,Cortex-A715 (2.37\,GHz), and 4\,$\times$\,Cortex-A510 (1.7\,GHz) cores, with Memory Tagging Extension (MTE) enabled.
-As of the time of writing, this is the sole commercially available device featuring MTE.
+We conducted our benchmarks on a Google Pixel 8 equipped with a Google Tensor G3 chip, comprising 1\,$\times$\,Cortex-X3 (2.91\,GHz), 4\,$\times$\,Cortex-A715 (2.37\,GHz), and 4\,$\times$\,Cortex-A510 (1.7\,GHz) cores, with \ac{MTE} enabled.
+As of the time of writing, this is the sole commercially available device featuring \ac{MTE}.
 To mitigate thermal throttling, we attached a cooling fan to the device.
 Each performance test was run on each CPU type available on the Tensor G3 chip by pinning to a single respective core.
 
@@ -58,7 +58,7 @@ For the memory safety extension, users may decide the additional risk is worth t
 
 \section{Memory Overheads}\label{sec:memory-overheads}
 
-Memory tagging incurs overhead, particularly for small allocations due to the 16-byte alignment required for MTE.
+Memory tagging incurs overhead, particularly for small allocations due to the 16-byte alignment required for \ac{MTE}.
 In our measurements, we did not see a significant difference in maximum \ac{rss}.
 This is because (1) safe allocations do not incur space overhead, and (2) for large allocations, the 16-byte alignment overhead is proportionally small.
 The main overhead in \cref{fig:memory-overheads} is mostly due to the switch to wasm64.
@@ -177,7 +177,7 @@ We suspect \texttt{st2g} translates to roughly the same microops as two \texttt{
 \subsection{Synchronous and Asynchronous Mode}
 \label{subsec:synchronous-and-asynchronous-mode}
 
-We evaluated the performance of sequential memory accesses with MTE disabled and enabled using synchronous mode and asynchronous mode, on each type of CPU core on the Pixel 8.
+We evaluated the performance of sequential memory accesses with \ac{MTE} disabled and enabled using synchronous mode and asynchronous mode, on each type of CPU core on the Pixel 8.
 In \cref{fig:sync-async-performance} we see that with synchronous mode, \texttt{memset} is 11.5\%, 8.9\%, and 13.2\% slower on the respective cores compared to the baseline with \ac{MTE} disabled.
 Asynchronous mode is closer to the baseline with an overhead of 0.9\%, 3.7\%, and 6.1\% respectively.
 
@@ -195,8 +195,8 @@ Migrating tagged memory involves the coordinated transfer of both data and its a
 In \cref{fig:migrate-performance}, we analyze the performance of various migration strategies.
 
 \begin{enumerate}
-    \item Baseline (\texttt{memcpy} with MTE): This baseline establishes the cost of a standard memory copy operation with \ac{MTE} enabled.
-    \item MTE Disable/Re-enable: Disabling MTE, copying data with \texttt{memcpy}, transferring tags, and re-enabling MTE.
+    \item Baseline (\texttt{memcpy} with \ac{MTE}): This baseline establishes the cost of a standard memory copy operation with \ac{MTE} enabled.
+    \item \ac{MTE} Disable/Re-enable: Disabling \ac{MTE}, copying data with \texttt{memcpy}, transferring tags, and re-enabling \ac{MTE}.
     This method temporarily compromises memory safety during the transfer if other threads rely on \ac{MTE} being active during this approach.
     \item Iterative Copying: Copying tags and data in 16\,byte granules allows copying tags and data simultaneous, while keeping \ac{MTE} active for other threads.
 \end{enumerate}
