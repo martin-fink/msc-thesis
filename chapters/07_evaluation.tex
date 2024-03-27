@@ -194,3 +194,22 @@ Asynchronous mode is closer to the baseline with an overhead of 0.9\%, 3.7\%, an
 
 \subsection{Migrating Tagged Memory}
 \label{subsec:migrating-tagged-memory}
+
+Migrating tagged memory involves the coordinated transfer of both data and its associated type information.
+In \cref{fig:migrate-performance}, we analyze the performance of various migration strategies.
+
+\begin{enumerate}
+    \item Baseline (\texttt{memcpy} with MTE): This baseline establishes the cost of a standard memory copy operation with \ac{MTE} enabled.
+    \item MTE Disable/Re-enable: Disabling MTE, copying data with \texttt{memcpy}, transferring tags, and re-enabling MTE.
+    This method temporarily compromises memory safety during the transfer if other threads rely on \ac{MTE} being active during this approach.
+    \item Iterative Copying: Copying tags and data in 16\,byte granules allows copying tags and data simultaneous, while keeping \ac{MTE} active for other threads.
+\end{enumerate}
+
+Approach 3 is slightly slower than approach 2 on the Cortex-X3, but faster on the other cores.
+
+\begin{figure}[h]
+    \centering
+    \input{plots/migrate.pgf}
+    \caption{Runtime comparison of strategies for moving 128 MiB of memory and tags between regions.}
+    \label{fig:migrate-performance}
+\end{figure}
