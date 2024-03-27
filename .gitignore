@@ -289,3 +289,5 @@ figures/sources/*.bkp
 figures/sources/*.dtmp
 
 git_ref.tex
+
+.DS_Store
