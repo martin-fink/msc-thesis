@@ -61,25 +61,75 @@ For the memory safety extension, users may decide the additional risk is worth t
 
 \section{Memory Overheads}\label{sec:memory-overheads}
 
-\begin{figure*}[ht]
-    \centering
-    \includegraphics[width=\textwidth]{./plots/mem-overhead}
-    \caption{{PolyBench/C memory overheads of our prototype. (a) Baseline. (b) Relative overhead of wasm64 with memory safety features. (c) Bounds checks implemented using MTE.}{}}
-    \label{fig:memory_overheads}
-\end{figure*}
-
 We measure the memory overhead with GNU time.
 
 Memory tagging incurs overhead, particularly for small allocations due to the 16-byte alignment required for MTE.
-The MTE backend further introduces overhead, as observed in \cref{fig:memory_overheads}, due to OS-level memory allocation requirements when MTE is active.
-Enabling our memory safety mechanism results in an average overhead of 1\%, with a range of -0.67\% to 23.5\%.
-In contrast, replacing bounds checks with MTE, which necessitates tagging the entire WebAssembly linear memory, leads to an average memory overhead of 0.26\%, with a range of -0.7\% to 1.4\%.
+In our measurements, we did not see a significant difference in maximum \ac{rss}.
+This is because (1) safe allocations do not incur space overhead, and (2) for large allocations, the 16-byte alignment overhead is proportionally small.
+The main overhead in \cref{fig:memory-overheads} is mostly due to the switch to wasm64.
 
+\begin{figure*}[ht]
+    \centering
+    \input{plots/mem-overhead.pgf}
+    \caption{PolyBench/C memory overheads of different configurations described in \cref{tab:benchmark-variants}, normalized to wasm64.}
+    \label{fig:memory-overheads}
+\end{figure*}
 
 \section{Security Guarantees}\label{sec:security-guarantees}
 
+We evaluate the security guarantees from the perspective of internal and external memory safety, as defined in \cref{sec:threat-model}.
 
-\todo{insert evaluation here}
+\subsection{External Memory Safety}
+\label{subsec:sec-guarantees-external-memory-safety}
+
+Running with \ac{MTE} bounds checks, with \ac{MTE} being configured to run in synchronous mode prevents programs from escaping their sandbox.
+We prevent programs from forging tags by masking the respective tag bits before computing the effective address, as described in \cref{subsec:bounds-checks}.
+Other defence mechanisms, such as structured control flow, the typed stack, function calls through typed and checked tables remain unchanged by our implementation.
+We do however limit the number of sandboxes in one process to at most 15, which is required to assign a distinct tag to each sandbox.
+
+Switching to async \ac{MTE} mode is not feasible to retain external memory safety, as memory accesses outside the sandbox may become observable both to the \ac{WASM} module performing the illegal access and to other modules.
+
+\subsection{Internal Memory Safety}
+\label{subsec:sec-guarantees-internal-memory-safety}
+
+For internal memory safety, our approach does not provide complete memory safety, as \ac{MTE} provides a limited number of tags.
+A tag collision means two memory regions could accidentally share the same tag, potentially leading to a missed security violation.
+For example, if a buffer overflow writes slightly beyond its intended bounds, but the overwritten memory has the same tag, \ac{MTE} would not detect the issue.
+
+We can calculate the probability for a tag collision for $k=2$ random tags according to \cref{fig:tag-collision}, with $n=16$ available tags for \ac{MTE} bounds disabled (\cref{fig:tag-collision-16}) and $n=8$ for bounds enabled (\cref{fig:tag-collision-8}), as we reserve one bit for the bounds checking mechanism.
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[T]{0.45\textwidth}
+        \centering
+        \begin{align*}
+            V_{nr} &= \frac{n!}{(n - k)!} = 240 \\
+            V_t &= n^k = 256 \\
+            P(\text{c}) &= 1 - \frac{V_{nr}}{V_t} = 6.25\%
+        \end{align*}
+        \caption{Probability of a tag collision with $n=16$ and $k=2$}
+        \label{fig:tag-collision-16}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[T]{0.45\textwidth}
+        \centering
+        \begin{align*}
+            V_{nr} &= \frac{n!}{(n - k)!} = 56 \\
+            V_t &= n^k = 64 \\
+            P(\text{c}) &= 1 - \frac{V_{nr}}{V_t} = 12.5\%
+        \end{align*}
+        \caption{Probability of a tag collision with $n=8$ and $k=2$}
+        \label{fig:tag-collision-8}
+    \end{subfigure}
+    \caption{Probabilities of tag collisions for random tags}
+    \label{fig:tag-collision}
+\end{figure}
+
+However, we ensure that adjacent allocations are always tagged with distinct tags, and that memory is tagged with a new tag when it is freed, thus ensuring that spatial errors up to 16\,bytes and temporal errors until the next allocation of a chunk of memory are always caught.
+
+This approach, however, does not provide complete memory safety and should be used as a secondary, not primary defense mechanism to harden applications in the wild.
+Our choice to leverage \ac{MTE} allows for a low overhead so this can be deployed in addition to testing using other mechanisms, such as \ac{ASAN}.
+
 
 \section{MTE Performance evaluation}
 \label{sec:mte-performance-evaluation}

@@ -144,6 +144,11 @@ When setting an allocation tag, we have three choices:
 To ensure new segments are always zeroed, options 1) and 2) would require an additional memset.
 We benchmarked all four variants (see \cref{sec:mte-performance-evaluation}) and chose \texttt{stzg}, as it had the lowest overhead while clobbering one less register compared to \texttt{stgp}.
 
+\subsection{Migration of the Linear Memory}
+\label{subsec:migration-of-the-linear-memory}
+
+\todo{write this}
+
 \subsection{\ac{MTE} Sandboxing}
 \label{subsec:bounds-checks}
 
