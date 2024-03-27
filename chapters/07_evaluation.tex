@@ -5,7 +5,7 @@
 \section{Experimental Setup}\label{sec:experimental-setup}
 
 We conducted our benchmarks on a Google Pixel 8 equipped with a Google Tensor G3 chip, comprising 1\,$\times$\,Cortex-X3 (2.91\,GHz), 4\,$\times$\,Cortex-A715 (2.37\,GHz), and 4\,$\times$\,Cortex-A510 (1.7\,GHz) cores, with Memory Tagging Extension (MTE) enabled.
-As of the date of writing, this is the sole commercially available device featuring MTE.
+As of the time of writing, this is the sole commercially available device featuring MTE.
 To mitigate thermal throttling, we attached a cooling fan to the device.
 Each performance test was run on each CPU type available on the Tensor G3 chip by pinning to a single respective core.
 
@@ -27,8 +27,7 @@ Each performance test was run on each CPU type available on the Tensor G3 chip b
     \label{tab:benchmark-variants}
 \end{table}
 
-\subsection{Benchmark Variants}
-\label{subsec:benchmark-variants}
+\noindent
 We ran the benchmarks from the PolyBench/C 3.2 suite~\cite{polybenchc}.
 
 \section{Performance Overheads}
@@ -42,26 +41,24 @@ We ran the benchmarks from the PolyBench/C 3.2 suite~\cite{polybenchc}.
 \end{figure}
 
 \Cref{fig:runtime-overheads-combined} illustrates the mean runtime overheads for PolyBench/C benchmarks for each CPU core available on the Tensor G3 chip.
-We can see that, compared to wasm64, our memory safety extension has a mean overhead of 5.8 and 4.9\,\% on the two out-of-order high performance cores.
+We can see that, compared to wasm64, our memory safety extension has a mean overhead of 5.8\,\% and 4.9\,\% on the two out-of-order high performance cores.
 On the in-order Cortex-A510, we see an overhead of just 1.0\,\%.
 Generally we see that the overhead of bounds checks through the switch from wasm32 to wasm64 is lower on the out-of-order cores, as those can speculate bounds checks, while the in-order cores cannot.
 This also explains the low overhead of our memory safety extension on the in-order cores, as we spend more time doing bounds checks compared to the in-order cores.
 
 When we replace software-based bounds checks with \ac{MTE} bounds checks, we see the overhead largely disappearing.
-The remaining overhead can be explained through (1) the natural overhead that enabling \ac{MTE} sunc mode costs (see \cref{subsec:synchronous-and-asynchronous-mode}) and (2) that the linear memory needs to be tagged after allocation.
+The remaining overhead can be explained through (1) the natural overhead that enabling \ac{MTE} synchronous mode costs (see \cref{subsec:synchronous-and-asynchronous-mode}) and (2) that the linear memory needs to be tagged after allocation.
 This overhead is especially noticeable for short-running modules that require large amounts of linear memory.
 
 Combining both \ac{MTE} bounds and \ac{MTE} memory safety, we see a slight increase from just \ac{MTE} bounds, that is smaller than the jump from wasm64 to memory safety.
-This is that we have already paid for the \ac{MTE} overhead, the overhead we are seeing here is the overhead resulting in additional tagging instructions.
+This is as we have already paid for the \ac{MTE} overhead, the overhead we are seeing here is the overhead resulting in additional tagging instructions.
 
-We could decrease the overhead even further by switching to \ac{MTE} async mode, which poses a lower overhead, compared to sync mode (see \cref{subsec:synchronous-and-asynchronous-mode}).
+We could decrease the overhead even further by switching to \ac{MTE} asynchronous mode, which poses a lower overhead, compared to sync mode (see \cref{subsec:synchronous-and-asynchronous-mode}).
 However, this dramatically reduces the security guarantees provided by \ac{MTE}, as illegal writes and reads may become observable.
 This disqualifies async \ac{MTE} for bounds checking of \ac{WASM} sandboxes, as attackers may carefully craft malicious code to escape their sandbox.
 For the memory safety extension, users may decide the additional risk is worth the reduced overhead, e.g., when the memory safety extension is not used as a primary defense mechanism, but as a second layer or to find bugs in the wild.
 
 \section{Memory Overheads}\label{sec:memory-overheads}
-
-We measure the memory overhead with GNU time.
 
 Memory tagging incurs overhead, particularly for small allocations due to the 16-byte alignment required for MTE.
 In our measurements, we did not see a significant difference in maximum \ac{rss}.
@@ -92,7 +89,8 @@ Switching to async \ac{MTE} mode is not feasible to retain external memory safet
 \subsection{Internal Memory Safety}
 \label{subsec:sec-guarantees-internal-memory-safety}
 
-For internal memory safety, our approach does not provide complete memory safety, as \ac{MTE} provides a limited number of tags.
+Our choice to leverage \ac{MTE} allows for a low overhead so this can be deployed in addition to testing using other mechanisms, such as \ac{ASAN}.
+For internal memory safety, however, our approach does not provide complete memory safety, as \ac{MTE} provides a limited number of tags and should be used as a secondary, not primary defense mechanism to harden applications in the wild.
 A tag collision means two memory regions could accidentally share the same tag, potentially leading to a missed security violation.
 For example, if a buffer overflow writes slightly beyond its intended bounds, but the overwritten memory has the same tag, \ac{MTE} would not detect the issue.
 
@@ -107,7 +105,7 @@ We can calculate the probability for a tag collision for $k=2$ random tags accor
             V_t &= n^k = 256 \\
             P(\text{c}) &= 1 - \frac{V_{nr}}{V_t} = 6.25\%
         \end{align*}
-        \caption{Probability of a tag collision with $n=16$ and $k=2$}
+        \caption{Probability of a tag collision with $n=16$ and $k=2$.}
         \label{fig:tag-collision-16}
     \end{subfigure}
     \hfill
@@ -118,18 +116,14 @@ We can calculate the probability for a tag collision for $k=2$ random tags accor
             V_t &= n^k = 64 \\
             P(\text{c}) &= 1 - \frac{V_{nr}}{V_t} = 12.5\%
         \end{align*}
-        \caption{Probability of a tag collision with $n=8$ and $k=2$}
+        \caption{Probability of a tag collision with $n=8$ and $k=2$.}
         \label{fig:tag-collision-8}
     \end{subfigure}
-    \caption{Probabilities of tag collisions for random tags}
+    \caption{Probabilities of tag collisions for random tags.}
     \label{fig:tag-collision}
 \end{figure}
 
 However, we ensure that adjacent allocations are always tagged with distinct tags, and that memory is tagged with a new tag when it is freed, thus ensuring that spatial errors up to 16\,bytes and temporal errors until the next allocation of a chunk of memory are always caught.
-
-This approach, however, does not provide complete memory safety and should be used as a secondary, not primary defense mechanism to harden applications in the wild.
-Our choice to leverage \ac{MTE} allows for a low overhead so this can be deployed in addition to testing using other mechanisms, such as \ac{ASAN}.
-
 
 \section{MTE Performance evaluation}
 \label{sec:mte-performance-evaluation}
@@ -197,3 +191,6 @@ Asynchronous mode is closer to the baseline with an overhead of 0.9\%, 3.7\%, an
     \caption{Runtime of \texttt{memset} on 128\,MiB of memory using different \ac{MTE} modes.}
     \label{fig:sync-async-performance}
 \end{figure}
+
+\subsection{Migrating Tagged Memory}
+\label{subsec:migrating-tagged-memory}

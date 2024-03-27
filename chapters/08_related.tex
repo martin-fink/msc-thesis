@@ -16,7 +16,7 @@ The segment memory relies on access through unforgeable \textit{handles}, akin t
 
 \paragraph{Key Differences}
 This thesis adopts a different approach by enabling a gradual migration of memory segments into the linear memory.
-This preserves compatibility with unmodified code, as only the allocation of allocation has to be changed.
+This preserves compatibility with unmodified code, as only the allocation of memory regions has to be changed.
 Memory accesses are still performed through integers, not pointers.
 We do not implement intra-memory safety to allow implementation with \ac{MTE}, which uses colors for memory access control rather than the shading required for intra-object safety.
 Utilizing \ac{MTE} allows our implementation to run with significantly lower overhead on devices supporting this technology.

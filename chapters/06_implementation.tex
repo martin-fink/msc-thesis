@@ -147,7 +147,20 @@ We benchmarked all four variants (see \cref{sec:mte-performance-evaluation}) and
 \subsection{Migration of the Linear Memory}
 \label{subsec:migration-of-the-linear-memory}
 
-\todo{write this}
+When resizing the linear memory, the runtime needs to move the existing linear memory to a new region.
+If memory safety is enabled, we need to ensure to also migrate the tags from the old region to the new region.
+Since each memory granule may be tagged with a distinct tag, we have the choice between two approaches.
+
+\begin{description}
+\item[Temporarily disable MTE]
+We can disable \ac{MTE} for the whole process, copy the contents and tags of the old linear memory to the new linear memory, and then re-enable \ac{MTE}.
+
+\item[Load the tag for each granule]
+We can first load the tag for a granule of memory and then use that tag to perform the memory access to load and then store the 16\,bytes of memory from the old to the new linear memory.
+\end{description}
+
+\noindent
+We have measured the performance of both approaches in \cref{subsec:migrating-tagged-memory}.
 
 \subsection{\ac{MTE} Sandboxing}
 \label{subsec:bounds-checks}
