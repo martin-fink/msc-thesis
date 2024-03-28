@@ -133,6 +133,8 @@ An example can be seen in \cref{fig:mte}.
 \Ac{PAC}~\cite{Qualcomm2017PointerAuth} introduces primitives to prevent attackers from modifying pointers stored in memory.
 The extension provides three instructions for signing pointers, authenticating, or stripping the signature from pointers.
 \ac{PAC} places the signature in the upper 16 bits of pointers, with the exact layout dependent on the operating system, hardware, and other factors, such as if \ac{MTE} is enabled.
+The signature can be between 7 and 16\,bits long.
+
 Signed pointers are invalid and cannot be used to address memory.
 They are created using the \texttt{pac*} instructions.
 Before being used, the signature needs to be removed.
@@ -141,6 +143,8 @@ The extension provides \texttt{strip} instructions to remove the signature regar
 
 \paragraph{} \ac{MTE} and \ac{PAC} can be combined at the cost of bits available for the \ac{PAC} signature.
 The exact layout of the \ac{PAC} signature varies depending on the system.
+On Linux, bits 56--59 are used for \ac{MTE} while bits 63--60 and 54--49 are used for \ac{PAC} (see \cref{fig:aarch64-pointer}).
+The remaining bit 55 is used to differentiate between lower and upper (kernel- and userspace) addresses.
 
 % TODO: write about LLVM?
 
