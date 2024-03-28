@@ -50,26 +50,27 @@ While the design of WebAssembly is designed to prevent malicious or erroneous pr
 
 Programs written in languages like C or C++ are prone to memory safety bugs such as memory accesses to (1) out-of-bounds or (2) dangling pointers, which are the fundamental attack primitives enabling a whole class of attacks on a vulnerable or buggy program~\cite{szekeres2013sok}.
 Approaches to tackle these issues exist in several forms.
-Studies show that in large software projects, memory safety bugs make up between 70 and 75\% of all issues~\cite{chromium_memory_safety,microsoft_memory_safety,android_memory_safety}.
-Programs may be written in managed languages that prevent these attacks by not providing raw pointer accesses, such as Java, Python, JavaScript, or others.
-In these languages, memory access is performed through bounds-checked arrays or managed objects, such as classes.
-A garbage collector is responsible for cleaning up dangling objects.
-This results in all references pointing to valid objects and all memory accesses being bounds-checked.
-Other languages, such as Rust, take a different approach.
-In Safe Rust, the type system forbids many invalid programs, e.g., dangling references or raw pointer accesses.
-An escape hatch in the form of unsafe exists, which allows dropping down to the level of C and directly manipulating raw bytes.
-Both these approaches represent a fundamental tradeoff.
-Managed memory, either in the form of reference-counting or through a garbage collector, incurs an overhead that may or may not be tolerated in some environments.
+Several studies have shown that in large software projects, memory safety bugs make up between 70\,\% and 75\,\% of all issues~\cite{chromium_memory_safety,microsoft_memory_safety,android_memory_safety}.
 
 \citeauthor*{lehmann2020everything} show that while some attack surfaces, such as jumping to arbitrary addresses or injecting shellcode, are mitigated by the design of WebAssembly, buffer overflows or dangling pointer accesses are still possible~\cite{lehmann2020everything}.
 Since WebAssembly does not provide separate read-only memory regions, this opens up other surfaces, allowing attackers to overwrite static data since compilers place these in readable and writeable memory.
 Crucially, neither fundamental attack primitives (1) nor (2) are prevented by WebAssembly and can form the basis of an exploit.
 
+Programs may be written in managed languages that prevent these attacks by not providing raw pointer accesses, such as Java, Python, JavaScript, or others.
+In these languages, memory access is performed through bounds-checked arrays or managed objects, such as classes.
+A garbage collector is responsible for cleaning up dangling objects.
+This results in all references pointing to valid objects and all memory accesses being bounds-checked.
+Other languages, such as Rust, take a different approach.
+In Safe Rust, the type system forbids many invalid programs, e.g., programs containing dangling references or raw pointer accesses.
+An escape hatch in the form of unsafe exists, which allows dropping down to the level of C and directly manipulating raw bytes.
+Both these approaches represent a fundamental tradeoff.
+Managed memory, either in the form of reference-counting or through a garbage collector, incurs an overhead that may or may not be tolerated in some environments.
+
 \subsection{Software-Based Mitigations}
 \label{subsec:software-based-mitigations}
 
-To detect or mitigate memory safety bugs in languages that do not provide safety guarantees at the language level, numerous approaches exist~\cite{serebryany2012addresssanitizer,serebryany2023gwp,nethercote2007valgrind,serebryany2018memory}.
-Checks can be inserted automatically at the compiler level, an approach chosen by \ac{ASAN}~\cite{serebryany2012addresssanitizer}.
+To detect and mitigate memory safety bugs in languages that do not provide safety guarantees at the language level, numerous approaches exist~\cite{serebryany2012addresssanitizer,serebryany2023gwp,nethercote2007valgrind,serebryany2018memory}.
+Checks can be inserted automatically at the compiler level, an approach chosen by \ac{ASAN} and \ac{HWASAN}~\cite{serebryany2012addresssanitizer,serebryany2018memory}.
 \Ac{ASAN} incurs significant overhead, on average 73\%, which is too large to be deployed in production and is usually only tolerated while testing or fuzzing software.
 A sampling-based version of \ac{ASAN}, GWP-Asan, is deployed in production in several large projects, which results in a low overhead but no complete protection for a single process~\cite{serebryany2023gwp}.
 On a large scale, however, this approach allows for discovering real-world bugs that may not be triggered by testing or fuzzing workloads.
@@ -78,7 +79,7 @@ On a large scale, however, this approach allows for discovering real-world bugs 
 \label{sec:memory-safety-hardware-extensions}
 
 As an alternative to flexible but slow software solutions to detect and prevent memory safety issues, CPU designers have developed several hardware extensions designed as an efficient foundation for memory safety.
-These provide important primitives that compilers or programmers can use to provide full or partial memory safety to programs while having a small enough footprint to ship these solutions in production.
+These provide important security primitives that compilers or programmers can use to provide full or partial memory safety to programs while having a small enough footprint to ship these solutions in production.
 
 \begin{figure}[t]
     \centering
@@ -87,15 +88,15 @@ These provide important primitives that compilers or programmers can use to prov
     \label{fig:aarch64-pointer}
 \end{figure}
 
-In \cref{fig:aarch64-pointer}, we show the layout of pointer bits used for address translation in aarch64, the 64\,bit variant of the ArmV8 instruction set\cite{ARMA2024Arch64}, when running on Linux.
+In \cref{fig:aarch64-pointer}, we show the layout of pointer bits used for address translation in aarch64, the 64\,bit variant of the ArmV8 instruction set~\cite{ARMA2024Arch64}, when running on Linux.
 Only 48 out of the available 64\ bits are used to address memory, while the remaining bits are set to either 0 or 1 to differentiate between kernel and userspace addresses but are unused for further address translation.
-Hardware extensions such as \ac{MTE} (\cref{subsec:mte}) and \ac{PAC} (\cref{subsec:pac}) utilize those unused bits to store metadata.
+Hardware extensions such as \ac{TBI}, \ac{MTE} (\cref{subsec:mte}), or \ac{PAC} (\cref{subsec:pac}) utilize those unused bits to store metadata.
 
 \subsection{Memory Tagging Extension (MTE)}
 \label{subsec:mte}
 
 ARMs \Ac{MTE}, available from ArmV8.5, provides a building block to prevent spatial and temporal memory safety violations~\cite{ARM2019MTE}.
-\ac{MTE} implements a lock-and-key mechanism where memory regions can be tagged with one of 16 distinct tags, and memory access is only allowed using pointers with the corresponding keys.
+\Ac{MTE} implements a lock-and-key mechanism where memory regions can be tagged with one of 16 distinct tags, and memory access is only allowed using pointers with the corresponding keys.
 
 The locking mechanism is implemented by storing a 4\,bit tag in bits 56--59 of an address (referred to as the logical tag).
 Accordingly, a tag is assigned to memory with a granularity of 16\,bytes (referred to as the allocation tag).
@@ -112,6 +113,19 @@ On Linux, each process can configure \ac{MTE} by switching between the following
     The fault is delivered after the instruction has retired in the form of a CPU flag.
     The kernel will check this flag at the next context switch and deliver a segmentation fault to the application.
 \end{itemize}
+
+
+\subsubsection{Temporal and Spatial Memory Safety}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[scale=1]{figures/build/mte}
+    \caption{Example of a heap allocation protected by \ac{MTE}.}
+    \label{fig:mte}
+\end{figure}
+
+\Ac{MTE} can be used to provide spatial memory safety by assigning different tags to adjacent regions and temporal memory safety by retagging freed memory.
+An example can be seen in \cref{fig:mte}.
 
 \subsection{Pointer Authentication (PAC)}
 \label{subsec:pac}
