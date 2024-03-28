@@ -1,0 +1,116 @@
+\chapter{Artifacts}
+\label{ch:artifacts}
+
+The artifacts are available on GitHub.
+They consist of the following repositories:
+
+\begin{itemize}
+    \item LLVM: \url{https://github.com/TUM-DSE/llvm-memsafe-wasm}
+    \item wasmtime: \url{https://github.com/TUM-DSE/wasmtime-mte}
+    \item wasm-tools: \url{https://github.com/TUM-DSE/wasm-tools-mte}
+    \item wasi-sdk: \url{https://github.com/martin-fink/wasi-sdk}
+    \item wasi-libc: \url{https://github.com/martin-fink/wasi-libc}
+    \item PolyBench/C: \url{https://github.com/martin-fink/polybench-c}
+\end{itemize}
+
+\section{Building}
+\label{sec:building}
+
+All the projects contain a \texttt{flake.nix} that can be used to start a development shell containing all the dependencies.
+On systems without Nix, these need to be installed manually.
+
+\subsection{LLVM Toolchain}
+\label{subsec:llvm-toolchain}
+
+The following commands can be used to bootstrap the \ac{WASM} compiler toolchain, including the libc.
+
+\begin{lstlisting}[label={lst:building-sdk}]
+    git clone --recurse-submodules https://github.com/martin-fink/wasi-sdk.git
+    cd wasi-sdk
+    make package
+    cd dist
+    tar -xzf wasi-sdk-20.38g2b3e8f68d320-linux.tar.gz
+    tar -xzf libclang_rt.builtins-wasm64-wasi-20.38g2b3e8f68d320.tar.gz
+    mv lib wasi-sdk-20.38g2b3e8f68d320/lib/clang/18/
+\end{lstlisting}
+
+\subsection{Wasmtime}
+\label{subsec:building-wasmtime}
+
+We are building wasmtime for Android, as the Pixel 8 is the only device supporting \ac{MTE} at the time of writing.
+The same steps are also possible if you are building for Linux.
+In any case, you need a C compiler and linker for the corresponding target.
+
+\begin{lstlisting}[label={lst:building-wasmtime}]
+    git clone --recurse-submodules https://github.com/TUM-DSE/wasmtime-mte.git wasmtime
+    cd wasmtime
+\end{lstlisting}
+
+\subsubsection{Building for Android}
+
+You need to install the Android NDK\footnote{\url{https://developer.android.com/ndk}}.
+Then, run the following commands:
+
+\begin{lstlisting}[label={lst:configuring-wasmtime-android}]
+    rustup target add aarch64-linux-android
+    mkdir .cargo
+    echo << EOF
+    [env]
+    [target.aarch64-linux-android]
+    linker = "/path/to/android/aarch64-linux-android34-clang"
+    ar = "/path/to/android/llvm-ar"
+    rustflags = ["-C", "target-feature=+mte"]
+    EOF >> .cargo/config.toml
+    cargo build --release --target aarch64-linux-android
+\end{lstlisting}
+
+\subsubsection{Building for Linux}
+
+You need a cross-compiler for aarch64 Linux.
+Then, run the following commands:
+
+\begin{lstlisting}[label={lst:configuring-wasmtime-linux}]
+    rustup target add aarch64-unknown-linux-gnu
+    mkdir .cargo
+    echo << EOF
+    [env]
+    CC_aarch64-unknown-linux-gnu = "aarch64-linux-gnu-gcc"
+    CC_aarch64-unknown-linux-musl = "aarch64-linux-gnu-gcc"
+
+    [target.aarch64-unknown-linux-gnu]
+    linker = "aarch64-linux-gnu-gcc"
+    rustflags = ["-C", "target-feature=+mte"]
+
+    [target.aarch64-unknown-linux-musl]
+    linker = "aarch64-linux-gnu-gcc"
+    rustflags = ["-C", "target-feature=+mte"]
+    EOF >> .cargo/config.toml
+    cargo build --release --target aarch64-unknown-linux-gnu
+\end{lstlisting}
+
+\section{Running Programs}
+\label{sec:running-programs}
+
+\subsection{Compiling with Memory Safety}\label{subsec:compiling-with-memory-safety}
+
+\begin{lstlisting}[label={lst:compiling-to-wasm}]
+    WASI_SDK=wasi-sdk-20.38g2b3e8f68d320
+    "./$WASI_SDK/bin/clang" \
+      -mmem-safety \
+      -Os \
+      -fsanitize=wasm-memsafety \
+      --sysroot "$WASI_SDK/share/wasi-sysroot" \
+      main.c \
+      -o main.wasm
+\end{lstlisting}
+
+\subsection{Running with Wasmtime}\label{subsec:running-with-wasmtime}
+
+\begin{lstlisting}[label={lst:running-wasm}]
+    ./wasmtime run \
+      -W memory64 \
+      -W mem-safety \
+      -C mte-bounds-checks \
+      -C mte \
+      main.wasm
+\end{lstlisting}
