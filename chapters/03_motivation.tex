@@ -1,9 +1,9 @@
 \chapter{Motivation}
 \label{ch:motivation}
 
-While WebAssembly provides strong safety and security guarantees, as discussed in \cref{sec:wasm}, these mainly guarantee safety for the host, not the program itself.
+While WebAssembly provides strong safety and security guarantees, as discussed in \cref{sec:wasm}, they mainly guarantee safety for the host, but not the program itself.
 In~\cite{lehmann2020everything}, \citeauthor*{lehmann2020everything} show that while some attack surfaces, such as injecting shellcode or jumping to arbitrary addresses, are mitigated by the design of WebAssembly, others, such as buffer overflows or write accesses to static, read-only data is possible and being used to exploit programs running in the wild.
-These need to be mitigated at the language level by rewriting software in a safe language such as Rust, manually inserting bounds checks, which is error-prone, or inserting checks using the compiler and sanitizing the code.
+Such cases need to be mitigated at the language level by rewriting software in a safe language such as Rust, manually inserting bounds checks, which is error-prone, or inserting checks using the compiler and sanitizing the code.
 
 Additionally, bugs like {CVE-2023-4863}~\cite{CVE-2023-4863} continue to be exploited, showing that memory safety is not a solved problem.
 While they do not escape the WebAssembly sandbox, they pose a security risk to the programs themselves.
@@ -23,10 +23,10 @@ void foo(char *input) {
     \label{fig:vulnerable-overflow}
 \end{figure}
 
-To contain potentially malicious programs within their sandbox, several different techniques may be used, as discussed in \cref{subsec:webassembly-sandbox}.
-Most implementations rely on virtual memory and guard pages to contain memory access when possible.
-However, in cases where virtual memory cannot be used, e.g., when running 64\,bit WebAssembly programs, the engine needs to fall back to software-based bounds checks, bringing a significant performance penalty.
+\Ac{WASM} engines use various techniques to protect their sandboxes against malicious code (see \cref{subsec:webassembly-sandbox}).
+While virtual memory and guard pages are preferred for performance, some situations (like running 64\,bit \ac{WASM}) require software-based bounds checks.
+This provides necessary security but comes at a performance cost.
 In our measurements, switching to 64\,bit \ac{WASM} resulted in a roughly 6--8\,\% overhead on out-of-order CPUs, which can speculate bounds checks, and 47\,\% overhead on in-order CPUs (see detailed evaluation in \cref{sec:performance-overheads}).
-The fallback to software-based bounds checks is thus especially painful when running on low-power in-order cores when running 64\,bit \ac{WASM} or in environments without an operating system, such as embedded devices.
+The fallback to software-based bounds checks is thus especially painful when running on low-power in-order cores using 64\,bit \ac{WASM} or in environments without an operating system, such as embedded devices.
 The results on the out-of-order CPUs are similar to a previous evaluation done by \citeauthor*{szewczyk2022leaps}~\cite{szewczyk2022leaps}.
 
