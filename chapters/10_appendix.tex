@@ -49,8 +49,7 @@ In any case, you need a C compiler and linker for the corresponding target.
 
 \subsubsection{Building for Android}
 
-You need to install the Android NDK\footnote{\url{https://developer.android.com/ndk}}.
-Then, run the following commands.
+You need to install the Android NDK\footnote{\url{https://developer.android.com/ndk}} to compile wasmtime for Android.
 The resulting binary will be placed in \texttt{./target/aarch64-linux-android/release/wasmtime}.
 
 \begin{lstlisting}[label={lst:configuring-wasmtime-android}]
@@ -69,7 +68,6 @@ The resulting binary will be placed in \texttt{./target/aarch64-linux-android/re
 \subsubsection{Building for Linux}
 
 You need a cross-compiler for aarch64 Linux.
-Then, run the following commands.
 The resulting binary will be placed in \texttt{./target/aarch64-unknown-linux-gnu/release/wasmtime}.
 
 \begin{lstlisting}[label={lst:configuring-wasmtime-linux}]

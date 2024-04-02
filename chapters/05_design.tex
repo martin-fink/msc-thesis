@@ -138,7 +138,7 @@ In the following paragraph, we describe the new instructions in detail.
     The instruction generates a new tag, assigns it to the piece of memory, and returns a tagged pointer that can be used to access the segment.
     \item[\texttt{segment.set\_tag}:] This instruction takes a memory index, a length, and a tagged pointer and applies the tag from the tagged pointer to the memory segment located at the index with the passed length.
     This can be used to move ownership from one segment to another or to merge segments.
-    \item[\texttt{segment.free}:] This instruction invalidates a segment by reassigning a new, implementation-defined tag.
+    \item[\texttt{segment.free}:] This instruction invalidates a segment by tagging the segment with a new, implementation-defined tag.
     This instruction takes two arguments: a memory index and a length.
     After this instruction, the tagged pointer being used to access the segment is no longer valid, and accessing the segment through it will result in a trap.
 \end{description}

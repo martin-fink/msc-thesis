@@ -19,8 +19,8 @@ WebAssembly~\cite{haas2017bringing}, initially designed as an alternative, high-
     This reduces the attack surface of programs compiled to \ac{WASM} and aids code generation.
     \item[Stack machine:] Since compilation targets offer different sets of registers, \ac{WASM} does not expose registers but instead operates on a typed stack.
     The stack can be verified to be well-typed and compiled to diverse targets, such as register machines or \acp{IR} in a single pass.
-    No assumptions about the number of guest registers are made, as these can vary between different architectures and runtimes, as they might reserve some registers for their own use (e.g. dedicating a register to hold some global state).
-    \item[Limited datatypes:] \Ac{WASM} defines four basic data types: 32\, and 64\,bit integer and floating-point types respectively.
+    No assumptions about the number of guest registers are made, as these can vary between different architectures and runtimes, as they might reserve some registers for their own use (e.g.\ dedicating a register to hold some global state).
+    \item[Limited datatypes:] \Ac{WASM} defines four basic data types: 32\, and 64\,bit integer and floating-point types.
     Different proposals add \mbox{vector-}, \mbox{garbage-collected-}, and reference types covering other use cases.
     There is no distinction between pointer- and integer types.
     While this loses information present in the original program, such as pointer provenance, and prevents some optimizations, this is not accounted as a problem.
