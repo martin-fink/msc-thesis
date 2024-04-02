@@ -42,14 +42,16 @@ The same steps are also possible if you are building for Linux.
 In any case, you need a C compiler and linker for the corresponding target.
 
 \begin{lstlisting}[label={lst:building-wasmtime}]
-    git clone --recurse-submodules https://github.com/TUM-DSE/wasmtime-mte.git wasmtime
+    git clone --recurse-submodules \
+        https://github.com/TUM-DSE/wasmtime-mte.git wasmtime
     cd wasmtime
 \end{lstlisting}
 
 \subsubsection{Building for Android}
 
 You need to install the Android NDK\footnote{\url{https://developer.android.com/ndk}}.
-Then, run the following commands:
+Then, run the following commands.
+The resulting binary will be placed in \texttt{./target/aarch64-linux-android/release/wasmtime}.
 
 \begin{lstlisting}[label={lst:configuring-wasmtime-android}]
     rustup target add aarch64-linux-android
@@ -67,7 +69,8 @@ Then, run the following commands:
 \subsubsection{Building for Linux}
 
 You need a cross-compiler for aarch64 Linux.
-Then, run the following commands:
+Then, run the following commands.
+The resulting binary will be placed in \texttt{./target/aarch64-unknown-linux-gnu/release/wasmtime}.
 
 \begin{lstlisting}[label={lst:configuring-wasmtime-linux}]
     rustup target add aarch64-unknown-linux-gnu
@@ -93,6 +96,20 @@ Then, run the following commands:
 
 \subsection{Compiling with Memory Safety}\label{subsec:compiling-with-memory-safety}
 
+LLVM supports the flags described in \cref{tab:llvm-flags}.
+
+\begin{table}[t]
+    \centering
+    \begin{tabular}{l | l | l}
+        \textbf{Flag} & \textbf{Description} & \textbf{Required Flag} \\
+        \hline
+        \texttt{-mmem-safety}              & Enable the memory safety extension. & -- \\
+        \texttt{-fsanitize=wasm-memsafety} & Enable the stack sanitizer. & \texttt{-mmem-safety} \\
+    \end{tabular}
+    \caption{Flags added to LLVM.}
+    \label{tab:llvm-flags}
+\end{table}
+
 \begin{lstlisting}[label={lst:compiling-to-wasm}]
     WASI_SDK=wasi-sdk-20.38g2b3e8f68d320
     "./$WASI_SDK/bin/clang" \
@@ -105,6 +122,24 @@ Then, run the following commands:
 \end{lstlisting}
 
 \subsection{Running with Wasmtime}\label{subsec:running-with-wasmtime}
+
+Copy the wasmtime binary built in \cref{subsec:building-wasmtime} to an \ac{MTE}-capable device, e.g., QEMU.
+Wasmtime supports the flags described in \cref{tab:wasmtime-flags}.
+
+
+\begin{table}[t]
+    \centering
+    \begin{tabular}{l | l | l}
+        \textbf{Flag} & \textbf{Description} & \textbf{Required Flag} \\
+        \hline
+        \texttt{-C mte}               & Enable the use of \ac{MTE.} & -- \\
+        \texttt{-C mte-bounds-checks} & Use \ac{MTE} for bounds checks. & \texttt{-C mte} \\
+        \texttt{-W mem-safety}        & Enable the memory safety extension. & \texttt{-C mte}, \texttt{-W memory64} \\
+    \end{tabular}
+    \caption{Flags added to wasmtime.}
+    \label{tab:wasmtime-flags}
+\end{table}
+
 
 \begin{lstlisting}[label={lst:running-wasm}]
     ./wasmtime run \
