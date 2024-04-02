@@ -98,18 +98,6 @@ The resulting binary will be placed in \texttt{./target/aarch64-unknown-linux-gn
 
 LLVM supports the flags described in \cref{tab:llvm-flags}.
 
-\begin{table}[t]
-    \centering
-    \begin{tabular}{l | l | l}
-        \textbf{Flag} & \textbf{Description} & \textbf{Required Flag} \\
-        \hline
-        \texttt{-mmem-safety}              & Enable the memory safety extension. & -- \\
-        \texttt{-fsanitize=wasm-memsafety} & Enable the stack sanitizer. & \texttt{-mmem-safety} \\
-    \end{tabular}
-    \caption{Flags added to LLVM.}
-    \label{tab:llvm-flags}
-\end{table}
-
 \begin{lstlisting}[label={lst:compiling-to-wasm}]
     WASI_SDK=wasi-sdk-20.38g2b3e8f68d320
     "./$WASI_SDK/bin/clang" \
@@ -125,21 +113,6 @@ LLVM supports the flags described in \cref{tab:llvm-flags}.
 
 Copy the wasmtime binary built in \cref{subsec:building-wasmtime} to an \ac{MTE}-capable device, e.g., QEMU.
 Wasmtime supports the flags described in \cref{tab:wasmtime-flags}.
-
-
-\begin{table}[t]
-    \centering
-    \begin{tabular}{l | l | l}
-        \textbf{Flag} & \textbf{Description} & \textbf{Required Flag} \\
-        \hline
-        \texttt{-C mte}               & Enable the use of \ac{MTE.} & -- \\
-        \texttt{-C mte-bounds-checks} & Use \ac{MTE} for bounds checks. & \texttt{-C mte} \\
-        \texttt{-W mem-safety}        & Enable the memory safety extension. & \texttt{-C mte}, \texttt{-W memory64} \\
-    \end{tabular}
-    \caption{Flags added to wasmtime.}
-    \label{tab:wasmtime-flags}
-\end{table}
-
 
 \begin{lstlisting}[label={lst:running-wasm}]
     ./wasmtime run \
