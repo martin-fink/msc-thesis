@@ -102,32 +102,10 @@ For our extension, we introduce the notion of abstract segments and tagged point
 We introduce three new instructions that allow the creation of abstract segments and tagged pointers from raw pointers.
 These pointers carry provenance and can only access the segment they were created for.
 Conversely, segments can only be accessed by the tagged pointer created with them rather than with raw indices without provenance.
-The instructions are type-checked according to \cref{fig:typing-rules}.
 
 \begin{equation*}
     \text{(new instructions) } e \Coloneqq \textbf{segment.new} \mid \textbf{segment.set\_tag} \mid \textbf{segment.free}
 \end{equation*}
-
-
-\begin{figure}[t]
-    \begin{prooftree}
-        \AxiomC{$C_{\text{memory}} = n$}
-        \AxiomC{$2^a=16$}
-        \BinaryInfC{$C \vdash \textbf{segment.new}\ a\ o : \text{i64}\ \text{i64} \rightarrow \text{i64}$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{$C_{\text{memory}} = n$}
-        \AxiomC{$2^a=16$}
-        \BinaryInfC{$C \vdash \textbf{segment.set\_tag}\ a\ o : \text{i64}\ \text{i64}\ \text{i64} \rightarrow \epsilon$}
-    \end{prooftree}
-    \begin{prooftree}
-        \AxiomC{$C_{\text{memory}} = n$}
-        \AxiomC{$2^a=16$}
-        \BinaryInfC{$C \vdash \textbf{segment.free}\ a\ o : \text{i64}\ \text{i64} \rightarrow \epsilon$}
-    \end{prooftree}
-    \caption{Typing rules for our new instructions. \todo{more explanation for this}}
-    \label{fig:typing-rules}
-\end{figure}
 
 \paragraph{}
 In the following paragraph, we describe the new instructions in detail.
@@ -157,6 +135,74 @@ Additionally, we can analyze stack allocations to only harden those accessed usi
 All segments are aligned to 16 bytes, corresponding to the alignment of \ac{MTE} (see \cref{subsec:mte}).
 This is an implementation choice that may be changed once we support additional implementations.
 More details can be found in \cref{sec:future-work}.
+
+\subsection{Typing Rules}
+\label{subsec:typing}
+
+In \cref{fig:typing-rules}, we extend the typing rules in the \ac{WASM} paper~\cite{haas2017bringing} in the notation of \citeauthor*{pierce2002types}~\cite{pierce2002types}.
+The rules are of the form of $C \vdash e : \mathit{tf}$.
+An instruction $e$ is valid under the context $C$, with $C_\text{memory}$ being used to access a component of the context.
+The rule $C_\text{memory} = n$ ensures that the instruction can only be used when a memory is declared.
+The rule $2^a=16$ ensures the alignment is 16\,bytes, as described in the previous section.
+The type $\mathit{tf} = t_1^* \rightarrow t_2^*$ describes how the instruction manipulates the operand stack.
+The instruction $e$ expects an operand stack where it pops off $t_1^*$ and pushes $t_2^*$.
+
+\begin{figure}[t]
+    \begin{equation*}
+        \small
+        \text{\small{(contexts)}}\ C \Coloneqq \{ \text{func}\ \mathit{tf}^*, \text{global}\ \mathit{tg}^*, \text{table}\ n^?, \text{memory}\ n^?, \text{local}\ t^*, \text{label}\ (t^*)^*, \text{return}\ (t^*)^? \}
+    \end{equation*}
+    \begin{prooftree}
+        \AxiomC{$C_{\text{memory}} = n$}
+        \AxiomC{$2^a=16$}
+        \BinaryInfC{$C \vdash \textbf{segment.new}\ a\ o : \text{i64}\ \text{i64} \rightarrow \text{i64}$}
+    \end{prooftree}
+    \begin{prooftree}
+        \AxiomC{$C_{\text{memory}} = n$}
+        \AxiomC{$2^a=16$}
+        \BinaryInfC{$C \vdash \textbf{segment.set\_tag}\ a\ o : \text{i64}\ \text{i64}\ \text{i64} \rightarrow \epsilon$}
+    \end{prooftree}
+    \begin{prooftree}
+        \AxiomC{$C_{\text{memory}} = n$}
+        \AxiomC{$2^a=16$}
+        \BinaryInfC{$C \vdash \textbf{segment.free}\ a\ o : \text{i64}\ \text{i64} \rightarrow \epsilon$}
+    \end{prooftree}
+    \caption{Typing rules for the new instructions.}
+    \label{fig:typing-rules}
+\end{figure}
+
+\subsection{Small-Step Reduction Rules}
+\label{subsec:small-step-reduction-rules}
+
+In \cref{fig:smallstep-rules}, we extend the small-step reduction rules from the \ac{WASM} paper~\cite{haas2017bringing} in the notation of \citeauthor*{plotkin1981structural}~\cite{plotkin1981structural}.
+The lower part of \cref{fig:smallstep-rules} contains the new rules for our new instructions and added rules for load/store instructions that take precedence over the existing ones.
+We reuse some of the operators from the rules of the \ac{WASM} paper, most notably the \textbf{trap} operator to signal when a trap occurs.
+The new load/store rules ensure that loads and stores trap on tag mismatches.
+On the left-hand side, we see the top of the operand stack and the state $s$.
+On the right-hand side, we show the resulting state and operating stack after executing the instruction $i$.
+
+We extend the state $s$ with a new tag storage consisting of raw bytes $b^*$.
+In this figure, we only show the added or modified components, not the full rules.
+
+\begin{figure}[t]
+    \begin{align*}
+        \text{(store)} && s &\Coloneqq \{\dots, \text{tag}\ \mathit{taginst}^*\} \\
+        && \mathit{taginst} &\Coloneqq b^*
+    \end{align*}
+    \begin{align*}
+        s;(\textbf{i64.const}\ k);(t\textbf{.load}\ a\ o)\ &\hookrightarrow_i\ \textbf{trap} \tag*{$\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$} \\[1em]
+        s;(\textbf{i64.const}\ k);(t\textbf{.const}\ c);(t\textbf{.store}\ a\ o)\ &\hookrightarrow_i\ \textbf{trap} \tag*{$\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$} \\[1em]
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ s);(\textbf{segment.new})\ &\hookrightarrow_i\ s';(\textbf{i64.const}\ t) \notag\\
+        \tag*{$\text{if}\ t = \text{new\_tag}(k) \land s' = s\ \text{with}\ \text{tag}(i, k, s) = t$} \\[1em]
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ t);(\textbf{i64.const}\ s);(\textbf{segment.set\_tag})\ &\hookrightarrow_i\ s' \notag\\
+        \tag*{$\text{if}\ s' = s\ \text{with}\ \text{tag}(i, k, s) = t$} \\[1em]
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ s);(\textbf{segment.free})\ &\hookrightarrow_i\ s' \notag\\
+        \tag*{$\text{if}\ t = \text{free\_tag}(k) \land s' = s\ \text{with}\ \text{tag}(i, k, s) = t$}
+    \end{align*}
+    \caption{Small-Step Reduction Rules.}
+    \label{fig:smallstep-rules}
+\end{figure}
+
 
 \subsection{Example}
 \label{subsec:example}
