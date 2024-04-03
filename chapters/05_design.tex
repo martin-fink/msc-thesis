@@ -174,14 +174,25 @@ The instruction $e$ expects an operand stack where it pops off $t_1^*$ and pushe
 \subsection{Small-Step Reduction Rules}
 \label{subsec:small-step-reduction-rules}
 
-In \cref{fig:smallstep-rules}, we extend the small-step reduction rules from the \ac{WASM} paper~\cite{haas2017bringing} in the notation of \citeauthor*{plotkin1981structural}~\cite{plotkin1981structural}.
-The lower part of \cref{fig:smallstep-rules} contains the new rules for our new instructions and added rules for load/store instructions that take precedence over the existing ones.
-We reuse some of the operators from the rules of the \ac{WASM} paper, most notably the \textbf{trap} operator to signal when a trap occurs.
-We extend the state $s$ with a new tag storage consisting of raw bytes $b^*$.
-In this figure, we only show the added or modified components, not the full rules.
-The new load/store rules ensure that loads and stores trap on tag mismatches.
-On the left-hand side of the reduction for instruction $i$, we list the top of the operand stack and the state $s$.
-On the right-hand side, we show the resulting state and operand stack after executing the instruction $i$.
+In \cref{fig:smallstep-rules}, we extend the small-step reduction rules from the WASM paper~\cite{haas2017bringing} using the notation established by Plotkin~\cite{plotkin1981structural}.
+The lower portion of  \cref{fig:smallstep-rules} presents new tag-aware load/store rules that take precedence over the existing ones, as well as new rules for the introduced instructions.
+
+We reuse operators from the original WASM rules, including the \textbf{trap} operator to signal a trap.
+The state, $s$, is augmented with a storage mechanism that assigns a tag $t$, to each memory byte.
+We use the following notation:
+
+\begin{itemize}
+    \item $s_{\text{tag}}(i, \mathit{addr}, \mathit{len})$: Extracts tags for a memory region accessed by instruction $i$ at address $\mathit{addr}$ with length $\mathit{len}$.
+    \item $s' = s\ \text{with}\ \text{tag}(i, \mathit{addr}, \mathit{len}) = t$: Updates the state with new tags for the memory region at address $\mathit{addr}$ with length $\mathit{len}$.
+    \item $t = \text{tag}(\mathit{pointer})$: Extracts the tag from a tagged pointer.
+    \item $t' = \text{new\_tag}(t)$: Creates a tagged pointer $t'$ from an untagged pointer $t$ to be used for a new segment.
+    \item $t' = \text{free\_tag}(t)$: Creates a tagged pointer $t'$ for the purpose of freeing a segment.
+\end{itemize}
+
+The figure highlights the added/modified components.
+Our new load/store rules enforce trapping on tag mismatches.
+The left-hand side of each reduction depicts the pre-execution operand stack top and state $s$.
+The right-hand side shows the resulting stack and state after instruction $i$ executes.
 
 \begin{figure}[t]
     \begin{align*}
