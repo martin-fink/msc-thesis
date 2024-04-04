@@ -40,7 +40,10 @@ This complements our work by providing additional protection mechanisms against 
 \section{Memory Safety for C}
 \label{sec:related-memory-safety}
 
-\subsection{Memory-Safe C Dialects}
+Various projects exist that work on providing memory safety for C.
+In this section we will consider language extensions (\cref{subsec:extensions-to-the-c-language}), instrumentation-based methods (\cref{subsec:automatic-approaches}), and hardened libraries (\cref{subsec:hardened-memory-allocators}).
+
+\subsection{Memory-Safe C Language Dialects}
 \label{subsec:extensions-to-the-c-language}
 
 Several projects such as CCured~\cite{necula2002ccured} or Cyclone~\cite{jim2002cyclone} implement memory safety by extending the C language.
@@ -50,41 +53,64 @@ CHERI C/C++ can be compiled in one of two modes: (1) purecap mode, where all poi
 Programmers can annotate pointers, which transforms them into capabilities, allowing capability-aware and unmodified code to be mixed.
 All of these approaches break binary compatibility by storing metadata in a fat pointer representation.
 
-\subsection{Automatic Approaches}
+\subsection{Instrumentation-Based Memory Safety}
 \label{subsec:automatic-approaches}
 
-Several projects focus on preventing or detecting memory safety errors by statically instrumenting code at compile time or dynamically instrumenting it at runtime.
-However, they usually require no modifications in source code and provide much stronger guarantees than their counterparts.
+Instrumentation-based projects usually require no modification to source code.
+We can divide automatic approaches into three major categories: (1) trip-wire-based, (2) object-based, and (3) pointer-based.
 
-\paragraph{}
-\Acl{ASAN} is a compiler instrumentation tool that dynamically detects memory safety errors at runtime~\cite{serebryany2012addresssanitizer}.
-It employs a shadow memory to track memory states and detect heap and stack overflows, use-after-free errors, use-after-return errors, and other memory-related issues.
-Pointer representation remains compatible with non-instrumented code, as metadata is stored in a separate data structure.
+\subsubsection{Trip-Wire-Based Approach}
 
-\paragraph{}
-\Acl{HWASAN} is a memory error detection tool that leverages ARM's \ac{TBI} extension.
-Unlike hardware-based \ac{MTE}, \ac{HWASAN} employs a software-based approach to tag checking:
-The two main differences to \ac{MTE} are:
-\begin{itemize}
-    \item Tag Storage: \ac{HWASAN} stores software-defined tags in the top 8 bits of memory pointers.
-    These bits are ignored during address calculations when TBI is enabled.
-    \item Tag Checking: \ac{HWASAN} inserts instructions into the program code to perform tag checks, simulating the functionality of \ac{MTE} in software.
-\end{itemize}
-As metadata is only stored in the bits that are not used to address memory, we consider pointer representation unchanged.
+Trip-Wire-Based projects guard zones around allocations to catch memory safety errors.
+Some projects that fall into this category are \ac{ASAN}~\cite{serebryany2012addresssanitizer}, GWP-ASan~\cite{serebryany2023gwp}, or Valgrind Memcheck~\cite{nethercote2007valgrind}.
+In the case of \ac{ASAN}, $\sfrac{1}{8}$ of the whole address space is mapped as shadow memory, with one bit of shadow memory representing the state of one byte of memory.
+When allocating memory, the allocation is padded and guard zones around the allocation are marked as inaccessible.
+When freeing memory, the whole memory block is marked as inaccessible.
+The sanitizer inserts checks before each memory access that checks the address currently being accessed.
+\Ac{ASAN} was built as a debugging tool to be used when running tests or fuzzing programs, as it has an average overhead of 73\,\%.
 
-\paragraph{}
-Baggy Bounds Checking~\cite{akritidis2009baggy} is a backwards-compatible approach that constrains allocation sizes and their alignment to powers of two to speed up bounds checks at runtime.
-It checks that accesses fall into allocation, not object bounds and thus results in much lower overhead compared to other approaches.
-
-\paragraph{}
-GWP-ASan~\cite{serebryany2023gwp} is focused to be deployed in production.
+GWP-ASan~\cite{serebryany2023gwp} is intended to be deployed in production.
 It adopts a probabilistic approach to memory safety by sampling a subset of allocations and placing them in a guarded memory region to detect spatial and temporal memory safety violations for those allocations.
 Its low selection probability minimizes runtime overhead.
 The goal is to uncover hard-to-reproduce memory bugs triggered by real-world user behavior not covered by fuzzing or tests.
 
-\paragraph{}
-In contrast, Valgrind Memcheck~\cite{nethercote2007valgrind} is a dynamically instruments programs.
-It allows instrumenting binaries without having to recompile with static instrumenting binaries, thus allowing debugging of production binaries.
+In contrast, Valgrind Memcheck utilizes dynamic binary instrumentation, which does not require recompilation from source.
+% TODO: write more?
+
+\subsubsection{Object-Based Approach}
+
+For object-based approaches, the metadata is associated with the allocated object.
+A notable project in this area is Baggy Bounds Checking~\cite{akritidis2009baggy}, which aligns and pads allocations to powers of two to speed up bounds checks at runtime.
+Metadata about the allocation can be efficiently retrieved thanks to the alignment of the allocation.
+Usually, pointers are checked when doing pointer arithmetic, not when dereferencing pointers.
+This poses a challenge for C, as the language permits out-of-bounds pointers, as long as they are not dereferenced.
+Intra-object safety is more challenging for the object-based-approaches, as enforcing those additional constraints may require more sophisticated data structures.
+Baggy Bounds Checking does not support this intra-object safety.
+
+\subsubsection{Pointer-Based Approach}
+
+In contrast, pointer-based approaches keep track of the pointer bounds.
+These can be either stored in the pointer, as fat pointers~\cite{watson_cheri_2020} or in unused bits~\cite{serebryany2018memory} or in an external data structure~\cite{nagarakatte2009softbound}.
+One project in this domain is SoftBound~\cite{nagarakatte2009softbound}.
+It keeps track of the upper and lower bounds of each pointer, instrumenting memory accesses to check if the pointer is within its bounds.
+This allows to implement intra-object memory safety.
+Additionally, creating out-of-bounds pointers is not an issue, as pointer arithmetic is not checked.
+SoftBound keeps track of pointers stored in memory in the form of a separate data structure, where bounds are looked up and stored to when loading and storing pointers from and to memory.
+Similarly, when passing pointers to and from functions, the bounds need to be propagated as additional arguments and return values.
+
+CHERI~\cite{woodruff2014cheri} is an implementation of a pointer-based approach with hardware support.
+It extends pointers to 128\,bits, including permission and compressed bounds.
+Pointer dereferences are checked by hardware, promising much better performance than software-based checks.
+Currently, hardware exists in the form of the ARM Morello board~\cite{UCAM-CL-TR-982}, a limited-production development board, shipped to selected academic and industry partners.
+
+\subsubsection{Hybrid Approaches}
+
+We consider memory-tagging-based approaches as a hybrid of the two approaches before.
+\Ac{HWASAN}~\cite{serebryany2018memory} or \ac{MTE} both associate metadata with the pointer in its upper, unused bits, and with objects by assigning tags to memory.
+In the case of \ac{HWASAN}, only memory accesses are instrumented, while memory accesses are checked by hardware with \ac{MTE}.
+This again allows out-of-bounds pointers to exist if they are not dereferenced.
+However, intra-object safety is not possible to implement, similar to object-based approaches.
+In the case of both \ac{HWASAN} and \ac{MTE}, binary compatibility is preserved, as the hardware ignores extra metadata in the upper bits of pointers, thus allowing uninstrumented code to handle pointers with and without metadata.
 
 \subsection{Hardened Memory Allocators}
 \label{subsec:hardened-memory-allocators}
