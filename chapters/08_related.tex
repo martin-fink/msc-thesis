@@ -1,6 +1,9 @@
 \chapter{Related Work}
 \label{ch:related}
 
+This chapter reviews existing efforts in ensuring memory safety, focusing on \ac{WASM} and C/C++ compiled directly to machine code.
+We explore notable projects in these areas, comparing their approaches with our research to highlight our distinct contributions.
+
 \section{Memory Safety for WebAssembly}
 \label{sec:related-memory-safety-for-webassembly}
 
@@ -18,14 +21,15 @@ The segment memory relies on access through unforgeable \textit{handles}, akin t
 This thesis adopts a different approach by enabling a gradual migration of memory segments into the linear memory.
 This preserves compatibility with unmodified code, as only the allocation of memory regions has to be changed.
 Memory accesses are still performed through integers, not pointers.
-We do not implement intra-object memory safety to allow implementation with \ac{MTE}, which uses colors for memory access control rather than the shading required for intra-object safety.
-Utilizing \ac{MTE} allows our implementation to run with significantly lower overhead on devices supporting this technology.
+We do not implement intra-object memory safety to allow implementation with \ac{MTE}.
+While MS-WASM proposes a technique to implement intra-object safety with a tagged-memory approach (shading), this is not supported by \ac{MTE}.
+We thus choose this tradeoff, as utilizing \ac{MTE} allows our implementation to run with significantly lower overhead on devices supporting this technology.
 
 \subsection{RichWasm}
 \label{subsec:richwasm}
 
-RichWasm is a richly-typed intermediate language designed to facilitate safe memory interactions between languages with diverse memory management models (e.g., manual and garbage-collected)~\cite{paraskevopoulou2024richwasm}.
-It enables static detection of potential memory safety violations, making it particularly valuable for mixed-language interoperability.
+RichWasm is a richly-typed intermediate language for safe memory interactions between languages with varying memory management models~\cite{paraskevopoulou2024richwasm}.
+It allows for static detection of memory safety violations and is especially beneficial for mixed-language interoperability.
 
 RichWasm is intended for use as a compilation target for safe languages like Rust or OCaml, which have strong memory safety guarantees encoded in their type systems.
 Languages like C, which lack information for static type safety analysis, are not directly supported by RichWasm's type-driven safety model.
@@ -41,7 +45,7 @@ This complements our work by providing additional protection mechanisms against 
 \label{sec:related-memory-safety}
 
 Various projects exist that work on providing memory safety for C.
-In this section we will consider language extensions (\cref{subsec:extensions-to-the-c-language}), instrumentation-based methods (\cref{subsec:automatic-approaches}), and hardened libraries (\cref{subsec:hardened-memory-allocators}).
+In this section discuss several approaches to provide memory safety for C outside the context of \ac{WASM}, such as language extensions (\cref{subsec:extensions-to-the-c-language}), instrumentation-based methods (\cref{subsec:automatic-approaches}), and hardened libraries (\cref{subsec:hardened-memory-allocators}).
 
 \subsection{Memory-Safe C Language Dialects}
 \label{subsec:extensions-to-the-c-language}
@@ -56,8 +60,8 @@ All of these approaches break binary compatibility by storing metadata in a fat 
 \subsection{Instrumentation-Based Memory Safety}
 \label{subsec:automatic-approaches}
 
-Instrumentation-based projects usually require no modification to source code.
-We can divide automatic approaches into three major categories: (1) trip-wire-based, (2) object-based, and (3) pointer-based.
+The following projects automate memory safety without source code changes, employing various strategies to detect and prevent memory errors~\cite{serebryany2012addresssanitizer,serebryany2023gwp,nethercote2007valgrind}.
+We can divide these approaches into three major categories: (1) trip-wire-based, (2) object-based, and (3) pointer-based.
 
 \subsubsection{Trip-Wire-Based Approach}
 
@@ -75,7 +79,6 @@ Its low selection probability minimizes runtime overhead.
 The goal is to uncover hard-to-reproduce memory bugs triggered by real-world user behavior not covered by fuzzing or tests.
 
 In contrast, Valgrind Memcheck utilizes dynamic binary instrumentation, which does not require recompilation from source.
-% TODO: write more?
 
 \subsubsection{Object-Based Approach}
 
