@@ -43,10 +43,24 @@ In current runtimes, this is usually achieved using two major approaches.
 \end{description}
 
 
-While the design of WebAssembly is designed to prevent malicious or erroneous programs from compromising the host, buggy programs are still vulnerable to classical memory safety errors discussed in \cref{sec:memory-safety}, such as buffer overflows.
+While the design of WebAssembly is designed to prevent malicious or erroneous programs from compromising the host, buggy programs are still vulnerable to classical memory safety errors discussed in \cref{sec:memory-safety-wasm}, such as buffer overflows.
+
+%\section{Memory Safety}
+%\label{sec:bg-memory-safety}
+%
+%Projects providing memory safety for existing programs usually fall into one of two categories: (1) object-based approaches and (2) pointer-based approaches.
+%
+%\subsection{Object-Based Approaches}
+%\label{subsec:object-based-approaches}
+%
+%Object-based approaches such as \cite{serebryany2012addresssanitizer} track
+%
+%\subsection{Pointer-Based Approaches}
+%\label{subsec:pointer-based-approaches}
+
 
 \section{Memory Safety in the context of WebAssembly}
-\label{sec:memory-safety}
+\label{sec:memory-safety-wasm}
 
 Programs written in languages like C or C++ are prone to memory safety bugs such as memory accesses to (1) out-of-bounds or (2) dangling pointers, which are the fundamental attack primitives enabling a whole class of attacks on a vulnerable or buggy program~\cite{szekeres2013sok}.
 Approaches to tackle these issues exist in several forms.

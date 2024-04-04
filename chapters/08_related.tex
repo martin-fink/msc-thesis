@@ -37,30 +37,31 @@ Languages like C, which lack information for static type safety analysis, are no
 In their work, they add pointer authentication primitives for data pointers backed by ARM's \ac{PAC} to the memory safety extension described in this thesis.
 This complements our work by providing additional protection mechanisms against pointer corruption.
 
-\section{Memory Safety}
+\section{Memory Safety for C}
 \label{sec:related-memory-safety}
 
-A few memory allocators have implemented support for \ac{MTE}, including:
+\subsection{Memory-Safe C Dialects}
+\label{subsec:extensions-to-the-c-language}
 
-\begin{itemize}
-    \item Scudo Hardened Allocator (used in Android): A security-oriented allocator providing defense mechanisms against heap-based vulnerabilities~\cite{scudo_allocator}.
-    \item Chrome's PartitionAlloc: A partitioning allocator focusing on security and efficiency for multithreaded environments~\cite{chrome_partition_alloc}.
-    \item glibc's Ptmalloc: The GNU C library's standard memory allocator, with evolving experimental support for \ac{MTE}~\cite{glibc_ptmalloc}.
-\end{itemize}
+Several projects such as CCured~\cite{necula2002ccured} or Cyclone~\cite{jim2002cyclone} implement memory safety by extending the C language.
+Their approach adds information about allocations, but requires manual changes to existing code.
+CHERI C/C++~\cite{watson_cheri_2020} goes into a similar direction, widening pointers to 128\,bits.
+CHERI C/C++ can be compiled in one of two modes: (1) purecap mode, where all pointers are capabilities and the compiler restricts them to allocations, automatically providing memory safety and (2) hybrid mode, where pointers remain 64\,bits wide.
+Programmers can annotate pointers, which transforms them into capabilities, allowing capability-aware and unmodified code to be mixed.
+All of these approaches break binary compatibility by storing metadata in a fat pointer representation.
 
-Additionally, an overview of other important projects contributing to memory safety:
+\subsection{Automatic Approaches}
+\label{subsec:automatic-approaches}
 
-\subsection{ASAN}
-\label{subsec:related-asan}
+Several projects focus on preventing or detecting memory safety errors by statically instrumenting code at compile time or dynamically instrumenting it at runtime.
+However, they usually require no modifications in source code and provide much stronger guarantees than their counterparts.
 
+\paragraph{}
 \Acl{ASAN} is a compiler instrumentation tool that dynamically detects memory safety errors at runtime~\cite{serebryany2012addresssanitizer}.
 It employs a shadow memory to track memory states and detect heap and stack overflows, use-after-free errors, use-after-return errors, and other memory-related issues.
+Pointer representation remains compatible with non-instrumented code, as metadata is stored in a separate data structure.
 
-\Ac{ASAN} is widely used in development and testing environments due to its effectiveness but is usually not deployed in production due to its runtime overhead.
-
-\subsection{HWASan}
-\label{subsec:hwasan}
-
+\paragraph{}
 \Acl{HWASAN} is a memory error detection tool that leverages ARM's \ac{TBI} extension.
 Unlike hardware-based \ac{MTE}, \ac{HWASAN} employs a software-based approach to tag checking:
 The two main differences to \ac{MTE} are:
@@ -69,12 +70,34 @@ The two main differences to \ac{MTE} are:
     These bits are ignored during address calculations when TBI is enabled.
     \item Tag Checking: \ac{HWASAN} inserts instructions into the program code to perform tag checks, simulating the functionality of \ac{MTE} in software.
 \end{itemize}
+As metadata is only stored in the bits that are not used to address memory, we consider pointer representation unchanged.
 
-\subsection{GWP-ASan}
-\label{subsec:gwp-asan}
+\paragraph{}
+Baggy Bounds Checking~\cite{akritidis2009baggy} is a backwards-compatible approach that constrains allocation sizes and their alignment to powers of two to speed up bounds checks at runtime.
+It checks that accesses fall into allocation, not object bounds and thus results in much lower overhead compared to other approaches.
 
-GWP-ASan adopts a probabilistic approach to memory safety~\cite{serebryany2023gwp}.
-It samples a subset of allocations and places them in a guarded memory region to detect spatial and temporal memory safety violations for those allocations.
+\paragraph{}
+GWP-ASan~\cite{serebryany2023gwp} is focused to be deployed in production.
+It adopts a probabilistic approach to memory safety by sampling a subset of allocations and placing them in a guarded memory region to detect spatial and temporal memory safety violations for those allocations.
+Its low selection probability minimizes runtime overhead.
+The goal is to uncover hard-to-reproduce memory bugs triggered by real-world user behavior not covered by fuzzing or tests.
 
-The low selection probability means GWP-ASan has minimal runtime overhead, making it suitable for large-scale production deployments.
-Its goal is to identify hard-to-reproduce memory bugs triggered by real-world user behavior and not covered by fuzzing or tests.
+\paragraph{}
+In contrast, Valgrind Memcheck~\cite{nethercote2007valgrind} is a dynamically instruments programs.
+It allows instrumenting binaries without having to recompile with static instrumenting binaries, thus allowing debugging of production binaries.
+
+\subsection{Hardened Memory Allocators}
+\label{subsec:hardened-memory-allocators}
+
+A few memory allocators have implemented support for \ac{MTE}.
+These provide probabilistic memory safety against both spatial and temporal memory safety, as long as no tag collisions occur.
+
+\begin{itemize}
+    \item Scudo Hardened Allocator (used in Android): A security-oriented allocator providing defense mechanisms against heap-based vulnerabilities~\cite{scudo_allocator}.
+    \item Chrome's PartitionAlloc: A partitioning allocator focusing on security and efficiency for multithreaded environments~\cite{chrome_partition_alloc}.
+    \item glibc's Ptmalloc: The GNU C library's standard memory allocator, with evolving experimental support for \ac{MTE}~\cite{glibc_ptmalloc}.
+\end{itemize}
+
+\paragraph{}
+The Cling memory allocator~\cite{akritidis2010cling} uses a different approach to prevent use-after-free exploits by placing heap metadata out-of-band and reusing memory only for objects of the same type.
+It achieves this by analyzing the call stack to determine the type of data being allocated and works as a drop-in replacement, without any code changes.
