@@ -30,11 +30,9 @@ In our threat model (\cref{fig:threat-model}), we differentiate between two aspe
 
 \begin{description}
     \item[Internal Memory Safety:] Ensures memory safety within the boundaries of a sandbox.
-    Our point of view is that from within a WebAssembly instance, we trust the runtime (and the host we are running on), but we do not trust external input.
-    See \cref{fig:internal-mem-safety}
+    Our point of view is from within a WebAssembly instance, we trust the runtime (and the host we are running on), but we do not trust external input (\cref{fig:internal-mem-safety}).
     \item[External Memory Safety:] Maintains the memory safety of the sandbox itself against potentially malicious programs.
-    Our point of view is from the runtime; we trust the platform we are running on but not the WebAssembly programs we are executing.
-    See \cref{fig:external-mem-safety}
+    Our point of view is from the runtime; we trust the platform we are running on, but not the WebAssembly programs we are executing (\cref{fig:external-mem-safety}).
 \end{description}
 
 \subsection{Internal Memory Safety}
@@ -60,7 +58,7 @@ As discussed in \cref{sec:wasm}, WebAssembly's design inherently mitigates some 
 \label{subsec:external-memory-safety}
 
 For external memory safety, we focus on the security of the sandbox.
-Threats originate from running untrusted programs, which may be buggy or adversarial.
+Threats originate from running untrusted programs, which may be adversarial or buggy.
 
 \begin{itemize}
     \item \textbf{Sandbox escapes:} Attempts to break out of the sandbox's restrictions and access host resources.
@@ -174,7 +172,7 @@ The instruction $e$ expects an operand stack where it pops off $t_1^*$ and pushe
 \subsection{Small-Step Reduction Rules}
 \label{subsec:small-step-reduction-rules}
 
-In \cref{fig:smallstep-rules}, we extend the small-step reduction rules from the WASM paper~\cite{haas2017bringing} using the notation established by Plotkin~\cite{plotkin1981structural}.
+In \cref{fig:smallstep-rules}, we extend the small-step reduction rules from the WASM paper~\cite{haas2017bringing} using the notation established by \citeauthor*{plotkin1981structural}~\cite{plotkin1981structural}.
 The lower portion of  \cref{fig:smallstep-rules} presents new tag-aware load/store rules that take precedence over the existing ones, as well as new rules for the introduced instructions.
 
 We reuse operators from the original WASM rules, including the \textbf{trap} operator to signal a trap.
@@ -189,7 +187,7 @@ We use the following notation:
     \item $t' = \text{free\_tag}(t)$: Creates a tagged pointer $t'$ for the purpose of freeing a segment.
 \end{itemize}
 
-The figure highlights the added/modified components.
+\cref{fig:smallstep-rules} highlights the added and modified components.
 Our new load/store rules enforce trapping on tag mismatches.
 The left-hand side of each reduction depicts the pre-execution operand stack top and state $s$.
 The right-hand side shows the resulting stack and state after instruction $i$ executes.
@@ -306,7 +304,8 @@ For stack safety, we create segments from stack slots when entering a function.
 Before returning, all stack slots are untagged and reassigned to the stack frame.
 This allows other functions to use the memory and prevents stack slots from being accessed after returning from a function.
 
-However, only some stack allocations need to be turned into segments, while others such as those that do not escape or that are only accessed using an index we can statically check to be in bounds.
+However, only some stack allocations need to be turned into segments.
+We can omit allocations that do not escape or allocations that are only accessed using statically verifiable indices.
 Creating segments for these would result in excessive runtime and memory overhead, as each allocation would need to be aligned to 16\,bytes and processed when entering and returning from a function.
 
 To address this, we design an algorithm that identifies safe memory regions within the stack that do not require protection, thus avoiding creating segments for the slots mentioned above.

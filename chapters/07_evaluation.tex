@@ -172,7 +172,7 @@ In \cref{fig:stg-performance} we can see the results.
 As expected, the instructions setting the memory implicitly to zero are faster than those tagging and then zeroing using an explicit memset.
 Both \texttt{stzg} and \texttt{stgp} are only slightly slower than a raw memset, as their memory accesses do not need to perform tag checks~\cite{ARMA2024Arch64}.
 
-Surprisingly, \texttt{st2g} is only slighly faster than \texttt{stg}.
+Surprisingly, \texttt{st2g} is only slightly faster than \texttt{stg}.
 We suspect \texttt{st2g} translates to roughly the same microops as two \texttt{stg} instructions do, except alignment checks and register write-backs, but are not able to confirm that.
 
 \subsection{Synchronous and Asynchronous Mode}

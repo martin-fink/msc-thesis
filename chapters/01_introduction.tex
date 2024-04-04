@@ -19,7 +19,7 @@ The core contributions of this thesis are outlined as follows:
 
 \begin{description}
     \item[WebAssembly Extension:] A minimal and generic extension to the WebAssembly instruction set, allowing for protected memory regions without code changes.
-    \item[Compiler Toolchain:] A compiler toolchain that transparently transforms unmodified prrograms to provide spatial and temporal memory safety for stack and heap allocations.
+    \item[Compiler Toolchain:] A compiler toolchain that transparently transforms unmodified programs to provide spatial and temporal memory safety for stack and heap allocations.
     \item[Runtime:] A \ac{WASM} runtime with support for our WebAssembly extension and modified \ac{WASM} compiler that utilizes ARM's \ac{MTE}.
     \item[Bounds Checks with \ac{MTE}:] An implementation to eliminate expensive software-based bounds checks for 64\,bit \ac{WASM} programs.
     \item[Evaluation on real hardware:] Evaluation of our implementation on ARM hardware, including performance and memory overheads as well as security guarantees, and \ac{MTE} as implemented in actual production hardware.

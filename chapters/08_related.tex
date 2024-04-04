@@ -45,7 +45,7 @@ This complements our work by providing additional protection mechanisms against 
 \label{sec:related-memory-safety}
 
 Various projects exist that work on providing memory safety for C.
-In this section discuss several approaches to provide memory safety for C outside the context of \ac{WASM}, such as language extensions (\cref{subsec:extensions-to-the-c-language}), instrumentation-based methods (\cref{subsec:automatic-approaches}), and hardened libraries (\cref{subsec:hardened-memory-allocators}).
+In this section, we discuss several approaches to provide memory safety for C outside the context of \ac{WASM}, such as language extensions (\cref{subsec:extensions-to-the-c-language}), instrumentation-based methods (\cref{subsec:automatic-approaches}), and hardened libraries (\cref{subsec:hardened-memory-allocators}).
 
 \subsection{Memory-Safe C Language Dialects}
 \label{subsec:extensions-to-the-c-language}
@@ -96,7 +96,7 @@ In contrast, pointer-based approaches keep track of the pointer bounds.
 These can be either stored in the pointer, as fat pointers~\cite{watson_cheri_2020} or in unused bits~\cite{serebryany2018memory} or in an external data structure~\cite{nagarakatte2009softbound}.
 One project in this domain is SoftBound~\cite{nagarakatte2009softbound}.
 It keeps track of the upper and lower bounds of each pointer, instrumenting memory accesses to check if the pointer is within its bounds.
-This allows to implement intra-object memory safety.
+This allows to implement intra-object memory safety, as multiple pointers with different bounds may point to overlapping regions.
 Additionally, creating out-of-bounds pointers is not an issue, as pointer arithmetic is not checked.
 SoftBound keeps track of pointers stored in memory in the form of a separate data structure, where bounds are looked up and stored to when loading and storing pointers from and to memory.
 Similarly, when passing pointers to and from functions, the bounds need to be propagated as additional arguments and return values.
@@ -108,7 +108,7 @@ Currently, hardware exists in the form of the ARM Morello board~\cite{UCAM-CL-TR
 
 \subsubsection{Hybrid Approaches}
 
-We consider memory-tagging-based approaches as a hybrid of the two approaches before.
+We consider memory-tagging-based approaches as a hybrid of object- and pointer-based approaches.
 \Ac{HWASAN}~\cite{serebryany2018memory} or \ac{MTE} both associate metadata with the pointer in its upper, unused bits, and with objects by assigning tags to memory.
 In the case of \ac{HWASAN}, only memory accesses are instrumented, while memory accesses are checked by hardware with \ac{MTE}.
 This again allows out-of-bounds pointers to exist if they are not dereferenced.

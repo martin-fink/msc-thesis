@@ -62,7 +62,7 @@ A garbage collector is responsible for cleaning up dangling objects.
 This results in all references pointing to valid objects and all memory accesses being bounds-checked.
 Other languages, such as Rust, take a different approach.
 In Safe Rust, the type system forbids many invalid programs, e.g., programs containing dangling references or raw pointer accesses.
-An escape hatch in the form of unsafe exists, which allows dropping down to the level of C and directly manipulating raw bytes.
+An escape hatch in the form of \texttt{unsafe} exists, which allows dropping down to the level of C and directly manipulating raw bytes.
 Both these approaches represent a fundamental tradeoff.
 Managed memory, either in the form of reference-counting or through a garbage collector, incurs an overhead that may or may not be tolerated in some environments.
 
@@ -72,7 +72,7 @@ Managed memory, either in the form of reference-counting or through a garbage co
 To detect and mitigate memory safety bugs in languages that do not provide safety guarantees at the language level, numerous approaches have been proposed~\cite{serebryany2012addresssanitizer,serebryany2023gwp,nethercote2007valgrind,serebryany2018memory}.
 Checks can be inserted automatically at the compiler level, an approach chosen by \ac{ASAN} and \ac{HWASAN}~\cite{serebryany2012addresssanitizer,serebryany2018memory}.
 \Ac{ASAN} incurs significant overhead, on average 73\%, which is too high to be deployed in production and is usually only tolerated while testing or fuzzing software.
-A sampling-based version of \ac{ASAN}, GWP-Asan, is deployed in production in several large projects, which results in a low overhead but no does not provide complete protection for a single process~\cite{serebryany2023gwp}.
+A sampling-based version of \ac{ASAN}, GWP-Asan, is deployed in production in several large projects, which results in a low overhead but does not provide complete protection for a single process~\cite{serebryany2023gwp}.
 On a large scale, however, this approach allows for discovering real-world bugs that may not be triggered by testing or fuzzing workloads.
 
 \section{Memory Safety Hardware Extensions}

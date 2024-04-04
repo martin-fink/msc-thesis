@@ -43,20 +43,20 @@ entry:
 \subsection{LLVM Sanitizer Pass}
 \label{subsec:llvm-sanitizer-pass}
 
-In LLVM, we introduce a \ac{WASM}-specific sanitizer pass that can be enabled via a compiler flag (see \cref{tab:llvm-flags}, designed to provide memory safety for stack allocations when compiling to WebAssembly.
+In LLVM, we introduce a \ac{WASM}-specific sanitizer pass that can be enabled via a compiler flag (see \cref{tab:llvm-flags}), designed to provide memory safety for stack allocations when compiling to WebAssembly.
 This sanitizer analyzes functions for stack allocations, applies padding and inserts calls to the intrinsics described in \cref{subsec:llvm-ir} to create segments, as discussed in \cref{subsec:stack-safety}.
 The pass runs after all optimizations, ensuring we do not block passes that might remove stack allocations, such as \texttt{mem2reg}.
 
 For each allocation the sanitizer hardens, we insert a call to the \texttt{segment.new} intrinsic after the allocation and replace all uses of the pointer to the allocation with our tagged pointer.
 Before returns or tail calls, we need to return ownership of the segment to the stack frame, i.e.\ retagging using the stack pointers tag.
-This serves two purposes: (1) subsequent code is able to access the memory through the stack pointer without a tagged pointer and (2) use-after-return errors are caught, as the tagged pointer is no able to access the segment.
+This serves two purposes: (1) subsequent code is able to access the memory through the stack pointer without a tagged pointer and (2) use-after-return errors are caught, as the tagged pointer is not able to access the segment.
 
 \begin{table}[t]
   \centering
   \begin{tabular}{l | l | l}
     \textbf{Flag} & \textbf{Description} & \textbf{Required Flag} \\
     \hline
-    \texttt{-mmem-safety}              & Enable the memory safety extension. & -- \\
+    \texttt{-mmem-safety}              & Enable the memory safety extension. & \\
     \texttt{-fsanitize=wasm-memsafety} & Enable the stack sanitizer. & \texttt{-mmem-safety} \\
   \end{tabular}
   \caption{Flags added to LLVM.}
@@ -103,7 +103,7 @@ When freeing or reallocating memory, segments are freed, ensuring temporal safet
   \begin{tabular}{l | l | l}
     \textbf{Flag} & \textbf{Description} & \textbf{Required Flag} \\
     \hline
-    \texttt{-C mte}               & Enable the use of \ac{MTE}. & -- \\
+    \texttt{-C mte}               & Enable the use of \ac{MTE}. & \\
     \texttt{-C mte-bounds-checks} & Use \ac{MTE} for bounds checks. & \texttt{-C mte} \\
     \texttt{-W mem-safety}        & Enable the memory safety extension. & \texttt{-C mte}, \texttt{-W memory64} \\
   \end{tabular}
@@ -164,7 +164,7 @@ When setting the allocation tag for a segment, we generate a loop iterating over
 If the size of the loop is known at compile time, we unroll the loop to tag up to 160\,bytes per iteration to avoid branch instructions.
 We chose this tradeoff between code size and reducing the number of branch instructions executed.
 
-When setting an allocation tag, we have three choices:
+When setting an allocation tag, we have four choices:
 \begin{enumerate}
   \item \texttt{stg}: Setting the tag for a single tag granule,
   \item \texttt{st2g}: Setting the tag for two tag granules,
@@ -241,7 +241,7 @@ while from != end {
 
 \noindent
 We have measured the performance of both approaches in \cref{subsec:migrating-tagged-memory}.
-As the approach to temporarily disable \ac{MTE} relies on there being just a single thread in the process requiring \ac{MTE} and is only marginally faster on some CPUs and slower on others, we choose second approach.
+As the approach to temporarily disable \ac{MTE} relies on there being just a single thread in the process requiring \ac{MTE} and is only marginally faster on some CPUs and slower on others, we choose the second approach.
 
 \subsection{\ac{MTE} Sandboxing}
 \label{subsec:bounds-checks}
@@ -249,7 +249,7 @@ As the approach to temporarily disable \ac{MTE} relies on there being just a sin
 In \cref{fig:system-design-sandboxing}, we show our approach to utilize memory tagging to replace software-based bounds checks.
 On module instantiation, the runtime assigns a tag (see \cref{tab:default-tag}) to each instance.
 This tag is stored in the heap base address.
-Memory access translation then involves adding the accessed index the tagged heap base address.
+Memory access translation then involves adding the accessed index to the tagged heap base address.
 The memory outside the linear memory, i.e.\ memory belonging to the runtime, is always tagged with the zero tag, ensuring \ac{MTE} catches accesses outside the sandbox and minimal modifications to the runtime itself.
 
 However, we face a limitation in the number of sandboxes for this approach.
