@@ -162,7 +162,7 @@ Additionally, we measure instruction throughput and latencies on all CPU cores.
 \subsection{Instruction Latencies and Throughput}\label{subsec:instruction-latencies-and-throughput}
 
 We evaluate instruction latencies and throughput in microbenchmarks executing 100,000,000 iterations of 100 instructions to minimize the effect of the looping code.
-We use simpleperf\footnote{\url{https://android.googlesource.com/platform/system/extras/+/master/simpleperf/doc/README.md}} to measure CPU cycles of our benchmarking program.
+We use simpleperf\footnote{\url{https://android.googlesource.com/platform/system/extras/+/master/simpleperf/doc/README.md}} to measure CPU cycles of our benchmarking program\footnote{\url{https://github.com/martin-fink/mte-inst-cycles}}.
 For each instruction, we measure three variants: (1) the baseline, which includes the startup, setup, and teardown of the benchmark, where no actual instructions are executed, (2) the latency test, where we measure instructions with data dependencies between them, and (3) the throughput test, where we measure instructions with no data dependencies.
 In \cref{tab:instruction-latencies}, we see the cycles and micro-ops per instruction.
 
