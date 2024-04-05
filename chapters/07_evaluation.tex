@@ -5,9 +5,31 @@
 \section{Experimental Setup}\label{sec:experimental-setup}
 
 We conduct our benchmarks on a Google Pixel 8 equipped with a Google Tensor G3 chip, comprising 1\,$\times$\,Cortex-X3 (2.91\,GHz), 4\,$\times$\,Cortex-A715 (2.37\,GHz), and 4\,$\times$\,Cortex-A510 (1.7\,GHz) cores, with \ac{MTE} enabled.
+See \cref{tab:cores-comparison} for details on the benchmarked cores~\todo{cite}.
 As of the time of writing, this is the sole commercially available device featuring \ac{MTE}.
 To mitigate thermal throttling, we attach a cooling fan to the device.
 Each performance test is run on each CPU type available on the Tensor G3 chip by pinning to a single respective core.
+
+
+\begin{table}[ht]
+    \centering
+    \small
+    \begin{tabular}{l || l | l | l}
+        \textbf{Spec}      & \textbf{Cortex-X3}    & \textbf{Cortex-A715} & \textbf{Cortex-A510} \\
+        \hline
+        Cores              & 1                     & 4                    & 4                    \\
+        Pipeline           & in-order              & out-of-order         & out-of-order         \\
+        Superscalar        & Yes                   & Yes                  & Yes                  \\
+        Architecture       & ArmV9.2               & ArmV9.2              & ArmV9.2              \\
+        Maxmimum Frequency & 2.91\,GHz             & 2.37\,GHz            & 1.7\,GHz             \\
+        L1 I-Cache/D-Cache & 64\,KiB               & $32/64$\,KiB         & $32/64$\,KiB         \\
+        L2 Cache           & 512\,KiB -- 1024\,KiB & 128\,KiB -- 512\,KiB & 128\,KiB -- 512\,KiB \\
+        L3 Cache           & 512\,KiB -- 16\,MiB   & 512\,KiB -- 32\,Mib  & 256\,KiB -- 16\,Mib  \\
+    \end{tabular}
+    \caption{Comparison of the benchmarked cores.}
+    \label{tab:cores-comparison}
+\end{table}
+
 
 \begin{table}[ht]
     \centering
@@ -15,11 +37,11 @@ Each performance test is run on each CPU type available on the Tensor G3 chip by
     \begin{tabular}{c || c|c|c}
         \textbf{Variant} & \textbf{Pointer Width} & \textbf{Memory Safety} & \textbf{MTE Bounds Checks} \\
         \hline
-        wasm32     & 32\,bit & No  & No  \\
-        wasm64     & 64\,bit & No  & No  \\
-        mem-safety & 64\,bit & Yes & No  \\
-        mte-bounds & 64\,bit & No  & Yes \\
-        combined   & 64\,bit & Yes & Yes \\
+        wasm32           & 32\,bit                & No                     & No                         \\
+        wasm64           & 64\,bit                & No                     & No                         \\
+        mem-safety       & 64\,bit                & Yes                    & No                         \\
+        mte-bounds       & 64\,bit                & No                     & Yes                        \\
+        combined         & 64\,bit                & Yes                    & Yes                        \\
     \end{tabular}
     \caption{Runtime Benchmarking Configurations}
     \label{tab:benchmark-variants}
@@ -27,6 +49,7 @@ Each performance test is run on each CPU type available on the Tensor G3 chip by
 
 \noindent
 We run the benchmarks from the PolyBench/C 3.2 suite~\cite{polybenchc}.
+
 
 \section{Performance Overheads}
 \label{sec:performance-overheads}
@@ -57,6 +80,7 @@ However, this dramatically reduces the security guarantees provided by \ac{MTE},
 This disqualifies async \ac{MTE} for bounds checking of \ac{WASM} sandboxes, as attackers may carefully craft malicious code to escape their sandbox.
 For the memory safety extension, users may decide the additional risk is worth the reduced overhead, e.g., when the memory safety extension is not used as a primary defense mechanism, but as a second layer or to find bugs in the wild.
 
+
 \section{Memory Overheads}\label{sec:memory-overheads}
 
 Memory tagging incurs overhead, particularly for small allocations due to the 16-byte alignment required for \ac{MTE}.
@@ -70,6 +94,7 @@ The main overhead in \cref{fig:memory-overheads} is mostly due to the switch to 
     \caption{PolyBench/C memory overheads of different configurations described in \cref{tab:benchmark-variants}, normalized to wasm64.}
     \label{fig:memory-overheads}
 \end{figure*}
+
 
 \section{Security Guarantees}\label{sec:security-guarantees}
 
@@ -124,6 +149,7 @@ We can calculate the probability for a tag collision for $k=2$ random tags accor
 
 However, we ensure that adjacent allocations are always tagged with distinct tags, and that memory is tagged with a new tag when it is freed, thus ensuring that spatial errors up to 16\,bytes and temporal errors until the next allocation of a chunk of memory are always caught.
 
+
 \section{MTE Performance evaluation}
 \label{sec:mte-performance-evaluation}
 
@@ -145,13 +171,13 @@ The instructions \texttt{stzg} and \texttt{stgp} implicitly set the granule to z
     \begin{tabular}{c || c | c |  c | c }
         \textbf{Variant} & \textbf{Instruction} & \textbf{Granule size} & \textbf{Implicit zero} & \textbf{memset} \\
         \hline
-        memset      & -             & -  & No  & Yes \\
-        stg         & \texttt{stg}  & 16 & No  & No  \\
-        st2g        & \texttt{st2g} & 32 & No  & No  \\
-        stgp        & \texttt{stgp} & 16 & Yes & No  \\
-        stzg        & \texttt{stzg} & 16 & Yes & No  \\
-        stg+memset  & \texttt{stg}  & 16 & No  & Yes \\
-        st2g+memset & \texttt{st2g} & 32 & No  & Yes \\
+        memset           & -                    & -                     & No                     & Yes             \\
+        stg              & \texttt{stg}         & 16                    & No                     & No              \\
+        st2g             & \texttt{st2g}        & 32                    & No                     & No              \\
+        stgp             & \texttt{stgp}        & 16                    & Yes                    & No              \\
+        stzg             & \texttt{stzg}        & 16                    & Yes                    & No              \\
+        stg+memset       & \texttt{stg}         & 16                    & No                     & Yes             \\
+        st2g+memset      & \texttt{st2g}        & 32                    & No                     & Yes             \\
     \end{tabular}
     \caption{MTE Benchmarking Variants}
     \label{tab:stg-instructions}
