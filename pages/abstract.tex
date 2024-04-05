@@ -1,3 +1,29 @@
 \chapter{\abstractname}
 
-%TODO: Abstract
+In this thesis, we investigate the design and implementation of an extension to \acf*{WASM} to address the issue of memory safety vulnerabilities, especially in languages like C and C++ that compile to \acs*{WASM}.
+Despite \acs*{WASM}'s sandboxing feature that isolates applications from other instances and the host, these languages are still prone to some memory safety bugs due to their lack of memory safety provided by the type system or prevalent libraries.
+This thesis introduces a minimally invasive extension to \acs*{WASM} designed to allow implementations to utilize diverse hardware- or software-based memory safety mechanisms.
+
+Our work includes a complete compiler toolchain for C/C++ in LLVM, hardening programs, and providing spatial and temporal memory safety for heap and stack allocations.
+We showcase an implementation utilizing ARM's hardware-based \acf*{MTE}, offering a high-performance, low-overhead solution to spatial and temporal memory safety issues compatible with real-world performance requirements.
+
+We further explore the possibility of integrating \acs*{MTE} into \acs*{WASM}'s sandboxing mechanism, improving the performance of programs relying on expensive software-based bounds checks.
+The empirical evaluation we conduct on actual hardware platforms validates our proposed system's practicality and performance advantages.
+
+The research adds to the WebAssembly and memory safety domain by introducing a generic, minimally invasive extension with low overhead.
+It sets a groundwork for further studies, suggesting directions for improving compatibility, optimizing performance, and incorporating various memory safety mechanisms.
+
+\chapter{Zusammenfassung}\label{ch:zusammenfassung}
+
+In dieser Arbeit untersuchen wir den Entwurf und die Implementierung einer Erweiterung von \acf*{WASM}, um das Problem der Speichersicherheitsschwachstellen zu lösen, insbesondere in Sprachen wie C und C++, die nach \acs*{WASM} kompiliert werden.
+Trotz der Sandboxing-Funktion von \acs*{WASM}, die Anwendungen von anderen Instanzen und dem Host isoliert, sind diese Sprachen immer noch anfällig für einige Speichersicherheitsfehler, da sie keine Speichersicherheit durch das Typsystem oder gängige Bibliotheken bieten.
+In dieser Arbeit wird eine minimal invasive Erweiterung von \acs*{WASM} vorgestellt, die es Implementierungen ermöglicht, verschiedene hardware- oder softwarebasierte Speichersicherheitsmechanismen zu nutzen.
+
+Unsere Arbeit umfasst eine vollständige Compiler-Toolchain für C/C++ in LLVM, die Härtung von Programmen und die Bereitstellung von räumlicher und zeitlicher Speichersicherheit für Heap- und Stack-Allokationen.
+Wir stellen eine Implementierung vor, die ARMs hardwarebasiertes \acf*{MTE} nutzt und eine leistungsstarke Lösung mit geringem Aufwand für räumliche und zeitliche Speichersicherheitsprobleme bietet, die mit den Leistungsanforderungen der realen Welt kompatibel ist.
+
+Außerdem untersuchen wir die Möglichkeit, \acs*{MTE} in den Sandboxing-Mechanismus von \acs*{WASM} zu integrieren, um die Leistung von Programmen zu verbessern, die auf teure softwarebasierte Bound Checks angewiesen sind.
+Die empirische Evaluierung, die wir auf aktuellen Hardware-Plattformen durchführen, bestätigt die Praktikabilität und die Leistungsvorteile des von uns vorgeschlagenen Systems.
+
+Die Forschungsarbeit bereichert den Bereich WebAssembly und Speichersicherheit durch die Einführung einer generischen, minimal invasiven Erweiterung mit geringem Overhead.
+Sie bildet die Grundlage für weitere Studien und schlägt Richtungen für die Verbesserung der Kompatibilität, die Optimierung der Leistung und die Einbindung verschiedener Speichersicherheitsmechanismen vor.
