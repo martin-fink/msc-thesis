@@ -5,7 +5,7 @@
 \section{Experimental Setup}\label{sec:experimental-setup}
 
 We conduct our benchmarks on a Google Pixel 8 equipped with a Google Tensor G3 chip, comprising 1\,$\times$\,Cortex-X3 (2.91\,GHz), 4\,$\times$\,Cortex-A715 (2.37\,GHz), and 4\,$\times$\,Cortex-A510 (1.7\,GHz) cores, with \ac{MTE} enabled.
-See \cref{tab:cores-comparison} for details on the benchmarked cores~\todo{cite}.
+See \cref{tab:cores-comparison} for details on the benchmarked cores.
 As of the time of writing, this is the sole commercially available device featuring \ac{MTE}.
 To mitigate thermal throttling, we attach a cooling fan to the device.
 Each performance test is run on each CPU type available on the Tensor G3 chip by pinning to a single respective core.
@@ -157,6 +157,42 @@ We evaluated the performance of different characteristics of \ac{MTE} as impleme
 All the programs used to measure results in this section are implemented in Rust and available on GitHub\footnote{\url{https://github.com/martin-fink/mte-stg-bench}}.
 As our benchmarking library we used criterion\footnote{\url{https://github.com/bheisler/criterion.rs}}.
 After each benchmarking run, we let the device cool down for 30\,seconds to prevent throttling.
+Additionally, we measure instruction throughput and latencies on all CPU cores.
+
+\subsection{Instruction Latencies and Throughput}\label{subsec:instruction-latencies-and-throughput}
+
+We evaluate instruction latencies and throughput in microbenchmarks executing 100,000,000 iterations of 100 instructions to minimize the effect of the looping code.
+We use simpleperf\footnote{\url{https://android.googlesource.com/platform/system/extras/+/master/simpleperf/doc/README.md}} to measure CPU cycles of our benchmarking program.
+For each instruction, we measure three variants: (1) the baseline, which includes the startup, setup, and teardown of the benchmark, where no actual instructions are executed, (2) the latency test, where we measure instructions with data dependencies between them, and (3) the throughput test, where we measure instructions with no data dependencies.
+In \cref{tab:instruction-latencies}, we see the cycles and micro-ops per instruction.
+
+We can make a few interesting observations:
+\begin{itemize}
+    \item For the set-tag instructions, Cortex-X3 has double the latency and half the throughput compared to Cortex-A720.
+    \item On Cortex-A510, \texttt{st2g} has double the latency and half the throughput of \texttt{stg}, while also being the only one with 2 micro-ops per instruction.
+    This leads us to believe that this instruction performs the same micro-op as \texttt{stg}, but for two tag granules, while the operation is optimized on the other cores.
+    \item Loading tags has a higher latency and lower or equal throughput compared to storing tags, except for the Cortex-X3.
+    \item As expected, latency-bound instructions never perform fewer cycles per instruction compared to throughput-bound instructions.
+\end{itemize}
+
+\newcolumntype{C}{>{\centering\arraybackslash}p{2em}}
+\begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{c || C | C | C | C | C | C | C | C | C }
+        \multirow{2}{*}{\textbf{Variant}} & \multicolumn{3}{c|}{\textbf{Cortex-X3}} & \multicolumn{3}{c|}{\textbf{Cortex-A720}} & \multicolumn{3}{c}{\textbf{Cortex-A510}} \\
+        & Lat & Tp   & $\mu$ops & Lat & Tp  & $\mu$ops & Lat & Tp & $\mu$ops \\
+        \hline
+        \texttt{irg}  & 2   & 0.75 & 3        & 2   & 1   & 3        & 3   & 2  & 1        \\
+        \texttt{ldg}  & 1   & 1    & 2        & 1.5 & 1   & 2        & 4   & 4  & 1        \\
+        \texttt{stg}  & 1   & 1    & 2        & 0.5 & 0.5 & 2        & 1.5 & 1  & 1        \\
+        \texttt{st2g} & 1   & 1    & 2        & 0.5 & 0.5 & 2        & 3   & 2  & 2        \\
+        \texttt{stgp} & 1   & 1    & 2        & 0.5 & 0.5 & 2        & 1.5 & 1  & 1        \\
+        \texttt{stzg} & 1   & 1    & 2        & 0.5 & 0.5 & 2        & 1.5 & 1  & 1        \\
+    \end{tabular}
+    \caption{MTE cycles per instruction when latency- and throughput-bound (lower is better), and micro-ops per instruction.}
+    \label{tab:instruction-latencies}
+\end{table}
 
 \subsection{Tagging Primitives}
 \label{subsec:tagging-primitives}
@@ -168,7 +204,7 @@ The instructions \texttt{stzg} and \texttt{stgp} implicitly set the granule to z
 \begin{table}[h]
     \centering
     \small
-    \begin{tabular}{c || c | c |  c | c }
+    \begin{tabular}{c || c | c | c | c }
         \textbf{Variant} & \textbf{Instruction} & \textbf{Granule size} & \textbf{Implicit zero} & \textbf{memset} \\
         \hline
         memset           & -                    & -                     & No                     & Yes             \\
@@ -199,7 +235,9 @@ As expected, the instructions setting the memory implicitly to zero are faster t
 Both \texttt{stzg} and \texttt{stgp} are only slightly slower than a raw memset, as their memory accesses do not need to perform tag checks~\cite{ARMA2024Arch64}.
 
 Surprisingly, \texttt{st2g} is only slightly faster than \texttt{stg}.
-We suspect \texttt{st2g} translates to roughly the same microops as two \texttt{stg} instructions do, except alignment checks and register write-backs, but are not able to confirm that.
+The results in this benchmark contradict the numbers we have seen in \cref{subsec:instruction-latencies-and-throughput}, as \cref{subsec:instruction-latencies-and-throughput} operates on filled data caches, while we explicitly clear data caches before each run.
+Additionally, we measure execution time instead of cycles.
+We see lower runtimes for the Cortex-X3 compared to the Cortex-A720, even though it features higher cycles per instructions for two reasons: (1) the Cortex-X3 is clocked at a higher frequency and (2) it features larger data caches.
 
 \subsection{Synchronous and Asynchronous Mode}
 \label{subsec:synchronous-and-asynchronous-mode}
