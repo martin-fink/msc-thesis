@@ -172,7 +172,7 @@ We can make a few interesting observations:
     \item On Cortex-A510, \texttt{st2g} has double the latency and half the throughput of \texttt{stg}, while also being the only one with 2 micro-ops per instruction.
     This leads us to believe that this instruction performs the same micro-op as \texttt{stg}, but for two tag granules, while the operation is optimized on the other cores.
     \item Loading tags has a higher latency and lower or equal throughput compared to storing tags, except for the Cortex-X3.
-    \item As expected, latency-bound instructions never perform fewer cycles per instruction compared to throughput-bound instructions.
+    \item As expected, we found latency-bound instructions to perform as many or or more cycles per instruction compared to throughput-bound instructions.
 \end{itemize}
 
 \newcolumntype{C}{>{\centering\arraybackslash}p{2em}}

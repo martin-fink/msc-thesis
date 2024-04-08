@@ -146,10 +146,6 @@ The type $\mathit{tf} = t_1^* \rightarrow t_2^*$ describes how the instruction m
 The instruction $e$ expects an operand stack where it pops off $t_1^*$ and pushes $t_2^*$.
 
 \begin{figure}[t]
-    \begin{equation*}
-        \small
-        \text{\small{(contexts)}}\ C \Coloneqq \{ \text{func}\ \mathit{tf}^*, \text{global}\ \mathit{tg}^*, \text{table}\ n^?, \text{memory}\ n^?, \text{local}\ t^*, \text{label}\ (t^*)^*, \text{return}\ (t^*)^? \}
-    \end{equation*}
     \begin{prooftree}
         \AxiomC{$C_{\text{memory}} = n$}
         \AxiomC{$2^a=16$}
@@ -165,7 +161,7 @@ The instruction $e$ expects an operand stack where it pops off $t_1^*$ and pushe
         \AxiomC{$2^a=16$}
         \BinaryInfC{$C \vdash \textbf{segment.free}\ a\ o : \text{i64}\ \text{i64} \rightarrow \epsilon$}
     \end{prooftree}
-    \caption{Typing rules for the new instructions.}
+    \caption{Typing rules of the new instructions. For the definition of context $C$, see the \ac{WASM} paper~\cite{haas2017bringing}.}
     \label{fig:typing-rules}
 \end{figure}
 
@@ -187,30 +183,31 @@ We use the following notation:
     \item $t' = \text{free\_tag}(t)$: Creates a tagged pointer $t'$ for the purpose of freeing a segment.
 \end{itemize}
 
-\cref{fig:smallstep-rules} highlights the added and modified components.
-Our new load/store rules enforce trapping on tag mismatches.
-The left-hand side of each reduction depicts the pre-execution operand stack top and state $s$.
-The right-hand side shows the resulting stack and state after instruction $i$ executes.
+\Cref{fig:smallstep-rules} highlights the added and modified components in the rules.
+The added load/store rules, specified in \cref{eq:smallstep-1,eq:smallstep-2}, enforce trapping on tag mismatches.
+The rules for the execution of the new instructions, which modify the state by setting tags, are presented in \cref{eq:smallstep-3,eq:smallstep-4,eq:smallstep-5}.
+Each reduction rule is depicted with the operand stack's top and state $s$ on the left-hand side, representing the pre-execution state, and the resulting stack and state after the execution of instruction $i$ on the right-hand side.
 
 \begin{figure}[t]
     \begin{align*}
-        \text{(store)} && s &\Coloneqq \{\dots, \text{tag}\ \mathit{taginst}^*\} \\
-        && \mathit{taginst} &\Coloneqq b^*
+        \text{(store)}\ s &\Coloneqq \{\dots, \text{tag}\ \mathit{taginst}^*\} \\
+        \mathit{taginst} &\Coloneqq b^*
     \end{align*}
-    \begin{align*}
-        s;(\textbf{i64.const}\ k);(t\textbf{.load}\ a\ o)\ &\hookrightarrow_i\ \textbf{trap} \tag*{$\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$} \\[1em]
-        s;(\textbf{i64.const}\ k);(t\textbf{.const}\ c);(t\textbf{.store}\ a\ o)\ &\hookrightarrow_i\ \textbf{trap} \tag*{$\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$} \\[1em]
-        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ s);(\textbf{segment.new})\ &\hookrightarrow_i\ s';(\textbf{i64.const}\ t) \notag\\
-        \tag*{$\text{if}\ t = \text{new\_tag}(k) \land s' = s\ \text{with}\ \text{tag}(i, k, s) = t$} \\[1em]
-        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ t);(\textbf{i64.const}\ s);(\textbf{segment.set\_tag})\ &\hookrightarrow_i\ s' \notag\\
-        \tag*{$\text{if}\ s' = s\ \text{with}\ \text{tag}(i, k, s) = t$} \\[1em]
-        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ s);(\textbf{segment.free})\ &\hookrightarrow_i\ s' \notag\\
-        \tag*{$\text{if}\ t = \text{free\_tag}(k) \land s' = s\ \text{with}\ \text{tag}(i, k, s) = t$}
-    \end{align*}
-    \caption{Small-step reduction rules.}
+    \begin{align}
+        s;(\textbf{i64.const}\ k);(t\textbf{.load}\ a\ o)\ &\hookrightarrow_i\ \textbf{trap} \label{eq:smallstep-1}
+        \shortintertext{\hfill $\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$\vskip1em}
+        s;(\textbf{i64.const}\ k);(t\textbf{.const}\ c);(t\textbf{.store}\ a\ o)\ &\hookrightarrow_i\ \textbf{trap} \label{eq:smallstep-2}
+        \shortintertext{\hfill $\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$\vskip1em}
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ s);(\textbf{segment.new})\ &\hookrightarrow_i\ s';(\textbf{i64.const}\ t) \label{eq:smallstep-3}
+        \shortintertext{\hfill $\text{if}\ t = \text{new\_tag}(k) \land s' = s\ \text{with}\ \text{tag}(i, k, s) = t$\vskip1em}
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ t);(\textbf{i64.const}\ s);(\textbf{segment.set\_tag})\ &\hookrightarrow_i\ s' \label{eq:smallstep-4}
+        \shortintertext{\hfill $\text{if}\ s' = s\ \text{with}\ \text{tag}(i, k, s) = t$\vskip1em}
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ s);(\textbf{segment.free})\ &\hookrightarrow_i\ s' \label{eq:smallstep-5}
+        \shortintertext{\hfill $\text{if}\ t = \text{free\_tag}(k) \land s' = s\ \text{with}\ \text{tag}(i, k, s) = t$} \notag
+    \end{align}
+    \caption{Small-step reduction rules of the new instructions and added rules for load/stores. See the \ac{WASM} paper~\cite{haas2017bringing} for the definitions of all rules and auxiliary constructs.}
     \label{fig:smallstep-rules}
 \end{figure}
-
 
 \subsection{Example}
 \label{subsec:example}
