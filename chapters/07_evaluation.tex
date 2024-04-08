@@ -56,7 +56,7 @@ We run the benchmarks from the PolyBench/C 3.2 suite~\cite{polybenchc}.
 
 \begin{figure}[ht]
     \centering
-    \input{plots/runtimes-all.pgf}
+    \includegraphics{plots/runtimes-all}
     \caption{PolyBench/C runtime overheads of different configurations described in \cref{tab:benchmark-variants}, normalized to wasm64.}
     \label{fig:runtime-overheads-combined}
 \end{figure}
@@ -90,7 +90,7 @@ The main overhead in \cref{fig:memory-overheads} is mostly due to the switch to 
 
 \begin{figure*}[t]
     \centering
-    \input{plots/mem-overhead.pgf}
+    \includegraphics{plots/mem-overhead}
     \caption{PolyBench/C memory overheads of different configurations described in \cref{tab:benchmark-variants}, normalized to wasm64.}
     \label{fig:memory-overheads}
 \end{figure*}
@@ -224,7 +224,7 @@ Before each run, we request a fresh piece of memory with \texttt{mmap} and run t
 
 \begin{figure}[h]
     \centering
-    \input{plots/stg.pgf}
+    \includegraphics{plots/stg}
     \caption{Performance results of the benchmarking variants from \cref{tab:stg-instructions} on 128\,MiB of memory.}
     \label{fig:stg-performance}
 \end{figure}
@@ -249,7 +249,7 @@ Asynchronous mode is closer to the baseline with an overhead of 0.9\%, 3.7\%, an
 
 \begin{figure}[h]
     \centering
-    \input{plots/sync-async.pgf}
+    \includegraphics{plots/sync-async}
     \caption{Runtime of \texttt{memset} on 128\,MiB of memory using different \ac{MTE} modes.}
     \label{fig:sync-async-performance}
 \end{figure}
@@ -271,7 +271,7 @@ Approach 3 is slightly slower than approach 2 on the Cortex-X3, but faster on th
 
 \begin{figure}[h]
     \centering
-    \input{plots/migrate.pgf}
+    \includegraphics{plots/migrate}
     \caption{Runtime comparison of strategies for moving 128 MiB of memory and tags between regions.}
     \label{fig:migrate-performance}
 \end{figure}
