@@ -47,6 +47,7 @@ Potential threats include:
     \item \textbf{Use-after-free:} Attempts to access deallocated memory.
 \end{itemize}
 
+\noindent
 As discussed in \cref{sec:wasm}, WebAssembly's design inherently mitigates some threats common in non-\ac{WASM} environments, so we will not consider the following vectors:
 
 \begin{itemize}
@@ -65,6 +66,7 @@ Threats originate from running untrusted programs, which may be adversarial or b
     \item \textbf{Side-channel attacks:} Exploiting timing differences or resource usage patterns to infer sensitive information.
 \end{itemize}
 
+\noindent
 We assume that the operating system and underlying target architecture are free of bugs that malicious targets might exploit.
 This does not include assumptions about potential spectre-like~\cite{kocher2020spectre} attacks.
 The compiler needs to ensure that bounds checks are guarded against side-channel attacks.
@@ -182,6 +184,7 @@ We use the following notation:
     \item $t' = \text{free\_tag}(t)$: Creates a tagged pointer $t'$ for the purpose of freeing a segment.
 \end{itemize}
 
+\noindent
 \Cref{fig:smallstep-rules} highlights the added and modified components in the rules.
 The added load/store rules, specified in \cref{eq:smallstep-1,eq:smallstep-2}, enforce trapping on tag mismatches.
 The rules for executing the new instructions, which modify the state by setting tags, are presented in \cref{eq:smallstep-3,eq:smallstep-4,eq:smallstep-5}.
@@ -211,46 +214,55 @@ Each reduction rule is depicted with the operand stack's top and state $s$ on th
 \subsection{Example}
 \label{subsec:example}
 
-We will demonstrate our \ac{WASM} extension using the following C snippet, which allocates 64 bytes on the stack.
-\begin{lstlisting}[frame=h,style=customc,
-    label={lst:wasm-example-c}]
-void foo() {
-    char buf[64];
-    // ...
-    return;
-}
-\end{lstlisting}
+We will demonstrate our \ac{WASM} extension using the C snippet in \cref{lst:wasm-example-c}, which allocates 64 bytes on the stack.
 
-This requires the compiler to instrument the stack allocation, create a new segment, and free the segment before returning to the caller, i.e., giving ownership of the stack slot back to the stack frame.
-We show the resulting code below.
+\begin{lstfloat}
+    \begin{lstlisting}[frame=h,style=customc,
+        label={lst:wasm-example-c-inner}]
+    void foo() {
+        char buf[64];
+        // ...
+        return;
+    }
+    \end{lstlisting}
+    \caption{Example of a C program allocating 64 bytes on the stack.}
+    \label{lst:wasm-example-c}
+\end{lstfloat}
 
-\begin{lstlisting}[frame=h,style=customwasm,
-    label={lst:wasm-example},escapechar=|]
-;; Allocate space on the stack
-global.get $__stack_pointer|\label{line:alloc-1}|
-i64.const 64|\label{line:alloc-2}|
-i64.sub|\label{line:alloc-3}|
-global.tee $__stack_pointer|\label{line:alloc-4}|
+\noindent
+This requires the compiler to instrument the stack allocation, create a new segment, and free the segment before returning to the caller, i.e., giving ownership of the stack slot back to the stack frame, as demonstrated in \cref{lst:wasm-example}.
 
-;; create a seg||ment
-i64.const 64|\label{line:segment-new-1}|
-segment.new|\label{line:segment-new-2}|
-local.set $buf|\label{line:segment-new-3}|
+\begin{lstfloat}
+    \begin{lstlisting}[frame=h,style=customwasm,
+        label={lst:wasm-example-inner},escapechar=|]
+    ;; Allocate space on the stack
+    global.get $__stack_pointer|\label{line:alloc-1}|
+    i64.const 64|\label{line:alloc-2}|
+    i64.sub|\label{line:alloc-3}|
+    global.tee $__stack_pointer|\label{line:alloc-4}|
 
-;; ...
+    ;; create a seg||ment
+    i64.const 64|\label{line:segment-new-1}|
+    segment.new|\label{line:segment-new-2}|
+    local.set $buf|\label{line:segment-new-3}|
 
-;; retag with stack pointer tag
-local.get $buf|\label{line:segment-set-tag-1}|
-global.get $__stack_pointer|\label{line:segment-set-tag-2}|
-i64.const 64|\label{line:segment-set-tag-3}|
-segment.set_tag|\label{line:segment-set-tag-4}|
+    ;; ...
 
-;; reset stack pointer
-global.get $__stack_pointer|\label{line:reset-sp-1}|
-i64.const 64|\label{line:reset-sp-2}|
-i64.sub|\label{line:reset-sp-3}|
-global.set $__stack_pointer|\label{line:reset-sp-4}|
-\end{lstlisting}
+    ;; retag with stack pointer tag
+    local.get $buf|\label{line:segment-set-tag-1}|
+    global.get $__stack_pointer|\label{line:segment-set-tag-2}|
+    i64.const 64|\label{line:segment-set-tag-3}|
+    segment.set_tag|\label{line:segment-set-tag-4}|
+
+    ;; reset stack pointer
+    global.get $__stack_pointer|\label{line:reset-sp-1}|
+    i64.const 64|\label{line:reset-sp-2}|
+    i64.sub|\label{line:reset-sp-3}|
+    global.set $__stack_pointer|\label{line:reset-sp-4}|
+    \end{lstlisting}
+    \caption{Generated \ac{WASM} for code from \cref{lst:wasm-example-c}.}
+    \label{lst:wasm-example}
+\end{lstfloat}
 
 The compiler allocates the slot for \texttt{buf} on the stack, decrementing the global \texttt{\$\_\_stack\_pointer} acting as the stack pointer (\cref{line:alloc-1,line:alloc-2,line:alloc-3,line:alloc-4}).
 Then, a new segment of size 64 is created, and the tagged pointer to it is stored in the local \lstinline[style=customwasm]{$buf} ((\cref{line:segment-new-1,line:segment-new-2,line:segment-new-3})).
@@ -263,35 +275,42 @@ Then, the stack pointer is reset, freeing the stack frame (\cref{line:reset-sp-1
 The memory allocator needs to be aware of segments to provide heap safety.
 When allocating memory, it aligns the requested size to 16 bytes, creates a segment, and returns the corresponding tagged pointer.
 This prevents overflows from corrupting allocator metadata or other memory segments.
+A modified allocator implementation looks conceptually similar to the snippet in \cref{lst:heap-allocator-example}.
 
-A modified allocator implementation looks conceptually similar to the following snippet:
+\begin{lstfloat}
+    \begin{lstlisting}[frame=h,style=customc,
+        label={lst:heap-allocator-example-inner}]
+    void *malloc(size_t length) {
+        void *chunk = /* perform allocation */;
+        return __builtin_wasm_segment_new(chunk, length);
+    }
+    \end{lstlisting}
+    \caption{Example of a malloc implementation utilizing the memory safety extension.}
+    \label{lst:heap-allocator-example}
+\end{lstfloat}
 
-\begin{lstlisting}[frame=h,style=customc,
-    label={lst:heap-allocator-example}]
-void *malloc(size_t length) {
-    void *chunk = /* perform allocation */;
-    return __builtin_wasm_segment_new(chunk, length);
-}
-\end{lstlisting}
-
+\noindent
 When compiled to \ac{WASM}, we see just three new instructions added to the generated code (\cref{line:segment-new-heap-1,line:segment-new-heap-2,line:segment-new-heap-3}).
 This proves that our extension is minimally invasive, as the calling code does not need to be changed and will continue to work as-is.
-
 Similarly, when freeing or reallocating memory, the allocator needs to ensure that the no longer valid memory is retagged.
 
-\begin{lstlisting}[frame=h,style=customwasm,
-    label={lst:wasm-allocator-example},escapechar=|]
-(func $malloc (param $length i64) (result i64) (local $chunk)
-    ;; perform allocation and place the res||ult in $chunk
-    ;; ...
+\begin{lstfloat}
+    \begin{lstlisting}[frame=h,style=customwasm,
+        label={lst:wasm-allocator-example-inner},escapechar=|]
+    (func $malloc (param $length i64) (result i64) (local $chunk)
+        ;; perform allocation and place the res||ult in $chunk
+        ;; ...
 
-    ;; create a seg||ment
-    local.get $chunk|\label{line:segment-new-heap-1}|
-    local.get $length|\label{line:segment-new-heap-2}|
-    segment.new|\label{line:segment-new-heap-3}|
-    ;; implicit ret||urn
-)
-\end{lstlisting}
+        ;; create a seg||ment
+        local.get $chunk|\label{line:segment-new-heap-1}|
+        local.get $length|\label{line:segment-new-heap-2}|
+        segment.new|\label{line:segment-new-heap-3}|
+        ;; implicit ret||urn
+    )
+    \end{lstlisting}
+    \caption{Generated \ac{WASM} for code from \cref{lst:heap-allocator-example}.}
+    \label{lst:wasm-allocator-example}
+\end{lstfloat}
 
 \subsection{Stack Safety}
 \label{subsec:stack-safety}
@@ -331,28 +350,32 @@ We iterate over all stack allocations and check if the allocation (a) escapes th
 \subsection{Example}
 \label{subsec:example2}
 
-We demonstrate the algorithm using the following function.
+\begin{lstfloat}
+    \begin{lstlisting}[frame=h,style=customc,
+        label={lst:stack-safety-inner},escapechar=|]
+    char foo(int index) {
+      int i = 0; // safe|\label{line:ex-i}|
+      int bytes_read = 0; // unsafe|\label{line:ex-bytes-read}|
+      char buf[32]; // unsafe|\label{line:ex-buf}|
+      read_input(buf, &bytes_read);|\label{line:ex-escape}|
+      return buf[index];|\label{line:ex-access}|
+    }
 
-\begin{lstlisting}[frame=h,style=customc,
-    label={lst:stack-safety},escapechar=|]
-char foo(int index) {
-  int i = 0; // safe|\label{line:ex-i}|
-  int bytes_read = 0; // unsafe|\label{line:ex-bytes-read}|
-  char buf[32]; // unsafe|\label{line:ex-buf}|
-  read_input(buf, &bytes_read);|\label{line:ex-escape}|
-  return buf[index];|\label{line:ex-access}|
-}
+    char *bar() {
+        char buf[32]; // unsafe
+        return buf;|\label{line:ex-ret}|
+    }
+    \end{lstlisting}
+    \caption{Example code for safe and unsafe stack slots.}
+    \label{lst:stack-safety}
+\end{lstfloat}
 
-char *bar() {
-    char buf[32]; // unsafe
-    return buf;|\label{line:ex-ret}|
-}
-\end{lstlisting}
-
-In the code example above, \texttt{i} (\cref{line:ex-i}) is safe, as its address is not used in a potentially unsafe address computation and does not escape.
+We demonstrate the algorithm using the function in \cref{lst:stack-safety}.
+In the code example, \texttt{i} (\cref{line:ex-i}) is safe, as its address is not used in a potentially unsafe address computation and does not escape.
 The variables \texttt{bytes\_read} and \texttt{buf} (\cref{line:ex-bytes-read,line:ex-buf}) are deemed unsafe as their address escapes (\cref{line:ex-escape}).
 Additionally, \texttt{buf} is accessed using an untrusted index (\cref{line:ex-access}).
 
+\noindent
 In function \texttt{bar}, \texttt{buf} also needs to be instrumented as it escapes: the pointer to it is returned to the caller (\cref{line:ex-ret}).
 Any attempt to dereference the value returned by \texttt{bar} is undefined behavior and will be caught by our instrumentation, preventing difficult-to-debug bugs or potential vulnerabilities.
 

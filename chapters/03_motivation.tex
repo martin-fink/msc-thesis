@@ -8,11 +8,11 @@ Such cases need to be mitigated at the language level by rewriting software in a
 Additionally, bugs like {CVE-2023-4863}~\cite{CVE-2023-4863} continue to be exploited, showing that memory safety is not a solved problem.
 While they do not escape the WebAssembly sandbox, they pose a security risk to the programs themselves.
 In C, the use of unsafe primitives or bugs, such as missing bounds checks, can be exploited by the attackers, e.g., by overwriting a variable to elevate their privileges.
-In \cref{fig:vulnerable-overflow}, the lack of bounds checks allows an attacker controlling the variable \texttt{input} to write beyond the allocation of \texttt{buf} and overwrite \texttt{str}.
+In \cref{lst:vulnerable-overflow}, the lack of bounds checks allows an attacker controlling the variable \texttt{input} to write beyond the allocation of \texttt{buf} and overwrite \texttt{str}.
 
-\begin{figure}[h]
+\begin{lstfloat}[h]
     \centering
-    \begin{lstlisting}[frame=h,style=customc,label={lst:vulnerable-overflow}]
+    \begin{lstlisting}[frame=h,style=customc,label={lst:vulnerable-overflow-inner}]
 void foo(char *input) {
     char buf[32];
     const char str = "Hello, World!";
@@ -20,8 +20,8 @@ void foo(char *input) {
 }
     \end{lstlisting}
     \caption{Vulnerable overflow.}
-    \label{fig:vulnerable-overflow}
-\end{figure}
+    \label{lst:vulnerable-overflow}
+\end{lstfloat}
 
 \Ac{WASM} engines use various techniques to protect their sandboxes against malicious code (see \cref{subsec:webassembly-sandbox}).
 While virtual memory and guard pages are preferred for performance, some situations (like running 64\,bit \ac{WASM}) require software-based bounds checks.

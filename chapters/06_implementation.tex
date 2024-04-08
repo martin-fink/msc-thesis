@@ -21,27 +21,44 @@ In the middle end, we introduce three new intrinsic functions that correspond an
   \item \lstinline[style=customc,language=llvm]{void @llvm.wasm.segment.free(ptr, i64)}
 \end{itemize}
 
+\noindent
 The clang front end or a sanitizer pass can insert calls to these intrinsic functions.
-The following listing shows how we lower a function that allocates 32 bytes on the stack to LLVM IR.
+\Cref{lst:llvm-intrinsics-float} shows how we lower a function that allocates 32 bytes on the stack to LLVM IR.
 
-\begin{lstlisting}[frame=h,style=customc,
-  label={lst:llvm-intrinsics},language=llvm]
-define hidden signext void @foo(i32 %index) {
-entry:
-  %arr = alloca [32 x i8], align 16
-  ; create a new segment
-  %1 = call ptr @llvm.wasm.segment.new(ptr %arr, i64 32)
+\begin{lstfloat}
+  \begin{lstlisting}[frame=h,style=customc,
+    label={lst:llvm-intrinsics},language=llvm]
+  define hidden signext void @foo(i32 %index) {
+  entry:
+    %arr = alloca [32 x i8], align 16
+    ; create a new segment
+    %1 = call ptr @llvm.wasm.segment.new(ptr %arr, i64 32)
 
-  ; do some work
+    ; do some work
 
-  ; return ownership of segment to stack
-  call void @llvm.wasm.segment.set.tag(ptr %1, ptr %arr, i64 32)
-  ret void
-}
-\end{lstlisting}
+    ; return ownership of segment to stack
+    call void @llvm.wasm.segment.set.tag(ptr %1, ptr %arr, i64 32)
+    ret void
+  }
+  \end{lstlisting}
+  \caption{Code generated for a function that allocates 32 bytes on the stack.}
+  \label{lst:llvm-intrinsics-float}
+\end{lstfloat}
 
 \subsection{LLVM Sanitizer Pass}
 \label{subsec:llvm-sanitizer-pass}
+
+\begin{table}[h]
+  \centering
+  \caption{Flags added to LLVM.}
+  \label{tab:llvm-flags}
+  \begin{tabular}{l | l | l}
+    \textbf{Flag} & \textbf{Description} & \textbf{Required Flag} \\
+    \hline
+    \texttt{-mmem-safety}              & Enable the memory safety extension. & \\
+    \texttt{-fsanitize=wasm-memsafety} & Enable the stack sanitizer. & \texttt{-mmem-safety} \\
+  \end{tabular}
+\end{table}
 
 In LLVM, we introduce a \ac{WASM}-specific sanitizer pass that can be enabled via a compiler flag (see \cref{tab:llvm-flags}), designed to provide memory safety for stack allocations when compiling to WebAssembly.
 This sanitizer analyzes functions for stack allocations, applies padding, and inserts calls to the intrinsics described in \cref{subsec:llvm-ir} to create segments, as discussed in \cref{subsec:stack-safety}.
@@ -50,18 +67,6 @@ The pass runs after all optimizations, ensuring we do not block passes that migh
 For each allocation the sanitizer hardens, we insert a call to the \texttt{segment.new} intrinsic after the allocation and replace all uses of the pointer to the allocation with our tagged pointer.
 Before returns or tail calls, we need to return ownership of the segment to the stack frame, i.e.\ retagging using the stack pointers tag.
 This serves two purposes: (1) subsequent code is able to access the memory through the stack pointer without a tagged pointer, and (2) use-after-return errors are caught, as the tagged pointer is not able to access the segment.
-
-\begin{table}[t]
-  \centering
-  \begin{tabular}{l | l | l}
-    \textbf{Flag} & \textbf{Description} & \textbf{Required Flag} \\
-    \hline
-    \texttt{-mmem-safety}              & Enable the memory safety extension. & \\
-    \texttt{-fsanitize=wasm-memsafety} & Enable the stack sanitizer. & \texttt{-mmem-safety} \\
-  \end{tabular}
-  \caption{Flags added to LLVM.}
-  \label{tab:llvm-flags}
-\end{table}
 
 \subsection{C extension}
 \label{subsec:c-extension}
@@ -74,15 +79,20 @@ To create and manipulate segments manually, e.g., to build a segment-aware memor
   \item \lstinline[style=customc]{void __builtin_wasm_segment_free(void *, unsigned long);}
 \end{itemize}
 
-The functions can be used as regular functions in C code, e.g.:
+\noindent
+The functions can be used as regular functions in C code, as illustrated in \cref{lst:builtin-functions-float}.
 
-\begin{lstlisting}[frame=h,style=customc,
-  label={lst:builtin-functions}]
-void *my_malloc(unsigned long size) {
-  void *memory = malloc(size);
-  return __builtin_wasm_segment_new(memory, size);
-}
-\end{lstlisting}
+\begin{lstfloat}
+  \begin{lstlisting}[frame=h,style=customc,
+    label={lst:builtin-functions}]
+  void *my_malloc(unsigned long size) {
+    void *memory = malloc(size);
+    return __builtin_wasm_segment_new(memory, size);
+  }
+  \end{lstlisting}
+  \caption{Example of how a built-in function can be called from C.}
+  \label{lst:builtin-functions-float}
+\end{lstfloat}
 
 \section{WASI Libc Modifications}
 \label{sec:wasi-libc}
@@ -100,6 +110,8 @@ When freeing or reallocating memory, segments are freed, ensuring temporal safet
 
 \begin{table}[t]
   \centering
+  \caption{Flags added to wasmtime.}
+  \label{tab:wasmtime-flags}
   \begin{tabular}{l | l | l}
     \textbf{Flag} & \textbf{Description} & \textbf{Required Flag} \\
     \hline
@@ -107,8 +119,6 @@ When freeing or reallocating memory, segments are freed, ensuring temporal safet
     \texttt{-C mte-bounds-checks} & Use \ac{MTE} for bounds checks. & \texttt{-C mte} \\
     \texttt{-W mem-safety}        & Enable the memory safety extension. & \texttt{-C mte}, \texttt{-W memory64} \\
   \end{tabular}
-  \caption{Flags added to wasmtime.}
-  \label{tab:wasmtime-flags}
 \end{table}
 
 We implement our prototype in wasmtime\footnote{\url{https://wasmtime.dev/}}, a WebAssembly runtime with a focus speed and correctness, written in Rust.
@@ -117,7 +127,7 @@ Wasmtime features an optimizing compiler, cranelift\footnote{\url{https://cranel
 \begin{figure}[t]
   \centering
   \includegraphics[scale=1]{figures/build/system-design-2}
-  \caption{Implementation of the memory safety extension in wasmtime.}
+  \caption{The memory safety extension, as implemented in wasmtime using \ac{MTE}. Memory segments are tagged, with different colors representing different tags. The processes virtual memory maps to physical memory and tag memory, which stores the tags assigned to memory granules.}
   \label{fig:wasmtime-mte-impl}
 \end{figure}
 
@@ -129,6 +139,8 @@ These features can be enabled using the flags described in \cref{tab:wasmtime-fl
 
 \begin{table}
   \centering
+  \caption{Default tag $t$ for the linear memory.}
+  \label{tab:default-tag}
   \begin{tabular}{c | c || c}
     \textbf{Memory Safety} & \textbf{MTE Sandboxing} & \textbf{Default Tag} \\
     \hline
@@ -137,8 +149,6 @@ These features can be enabled using the flags described in \cref{tab:wasmtime-fl
     Yes & No  & $t \in \{\,0\,\}$ \\
     Yes & Yes & $t \in \{\,1\,\}$
   \end{tabular}
-  \caption{Default tag $t$ for the linear memory.}
-  \label{tab:default-tag}
 \end{table}
 
 The memory is tagged by default with one of the tags described in \cref{tab:default-tag}, depending on the configuration.
@@ -258,7 +268,7 @@ Since \ac{MTE} only offers up to 16 distinct tags, we are limited to up to 15 di
 \begin{figure}[t]
   \centering
   \includegraphics[scale=1]{figures/build/system-design-1}
-  \caption{Bounds checks using \ac{MTE}.}
+  \caption{Bounds checks as implemented in wasmtime using \ac{MTE}. Each instances linear memory is assigned a unique tag, which re represent using different colors. The processes virtual memory maps to physical memory and tag memory, which stores the tags assigned to memory granules.}
   \label{fig:system-design-sandboxing}
 \end{figure}
 
@@ -285,6 +295,8 @@ In \cref{tab:tag-mask}, we can see the mask used for each configuration.
 
 \begin{table}
   \centering
+  \caption{Tag mask for the index.}
+  \label{tab:tag-mask}
   \begin{tabular}{c | c || c}
     \textbf{Memory Safety} & \textbf{MTE Sandboxing} & \textbf{Tag Mask} \\
     \hline
@@ -293,8 +305,6 @@ In \cref{tab:tag-mask}, we can see the mask used for each configuration.
     Yes & No  & -- \\
     Yes & Yes & \texttt{and 0xFEFF\_FFFF\_FFFF\_FFFF}
   \end{tabular}
-  \caption{Tag mask for the index.}
-  \label{tab:tag-mask}
 \end{table}
 
 \begin{figure}[t]
@@ -325,6 +335,8 @@ If the memory safety extension is disabled, none of these instructions will be e
 
 \begin{table}
   \centering
+  \caption{Included tags for \texttt{irg}, \texttt{addg} instructions depending on configuration.}
+  \label{tab:tag-include-mask}
   \begin{tabular}{c | c || c | c}
     \textbf{Memory Safety} & \textbf{MTE Sandboxing} & \textbf{Tag Include Mask} & \textbf{Included Tags} \\
     \hline
@@ -333,7 +345,5 @@ If the memory safety extension is disabled, none of these instructions will be e
     Yes & No  & \texttt{0xffff} & $t \in \{\,1, 2, \dots, 15\,\}$ \\
     Yes & Yes & \texttt{0x5555} & $t \in \{\,2, 4, \dots, 14\,\}$
   \end{tabular}
-  \caption{Included tags for \texttt{irg}, \texttt{addg} instructions depending on configuration.}
-  \label{tab:tag-include-mask}
 \end{table}
 

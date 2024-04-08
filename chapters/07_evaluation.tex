@@ -14,6 +14,8 @@ Each performance test is run on each CPU type available on the Tensor G3 chip by
 \begin{table}[ht]
     \centering
     \small
+    \caption{Comparison of the benchmarked cores.}
+    \label{tab:cores-comparison}
     \begin{tabular}{l || l | l | l}
         \textbf{Spec}      & \textbf{Cortex-X3}    & \textbf{Cortex-A715} & \textbf{Cortex-A510} \\
         \hline
@@ -26,14 +28,14 @@ Each performance test is run on each CPU type available on the Tensor G3 chip by
         L2 Cache           & 512\,KiB -- 1024\,KiB & 128\,KiB -- 512\,KiB & 128\,KiB -- 512\,KiB \\
         L3 Cache           & 512\,KiB -- 16\,MiB   & 512\,KiB -- 32\,Mib  & 256\,KiB -- 16\,Mib  \\
     \end{tabular}
-    \caption{Comparison of the benchmarked cores.}
-    \label{tab:cores-comparison}
 \end{table}
 
 
 \begin{table}[ht]
     \centering
     \small
+    \caption{Runtime benchmarking configurations.}
+    \label{tab:benchmark-variants}
     \begin{tabular}{c || c|c|c}
         \textbf{Variant} & \textbf{Pointer Width} & \textbf{Memory Safety} & \textbf{MTE Bounds Checks} \\
         \hline
@@ -43,8 +45,6 @@ Each performance test is run on each CPU type available on the Tensor G3 chip by
         mte-bounds       & 64\,bit                & No                     & Yes                        \\
         combined         & 64\,bit                & Yes                    & Yes                        \\
     \end{tabular}
-    \caption{Runtime benchmarking configurations.}
-    \label{tab:benchmark-variants}
 \end{table}
 
 \noindent
@@ -179,6 +179,8 @@ We can make a few interesting observations:
 \begin{table}[h]
     \centering
     \small
+    \caption{MTE cycles per instruction when latency- and throughput-bound (lower is better), and micro-ops per instruction.}
+    \label{tab:instruction-latencies}
     \begin{tabular}{c || C | C | C | C | C | C | C | C | C }
         \multirow{2}{*}{\textbf{Variant}} & \multicolumn{3}{c|}{\textbf{Cortex-X3}} & \multicolumn{3}{c|}{\textbf{Cortex-A720}} & \multicolumn{3}{c}{\textbf{Cortex-A510}} \\
         & Lat & Tp   & $\mu$ops & Lat & Tp  & $\mu$ops & Lat & Tp & $\mu$ops \\
@@ -190,8 +192,6 @@ We can make a few interesting observations:
         \texttt{stgp} & 1   & 1    & 2        & 0.5 & 0.5 & 2        & 1.5 & 1  & 1        \\
         \texttt{stzg} & 1   & 1    & 2        & 0.5 & 0.5 & 2        & 1.5 & 1  & 1        \\
     \end{tabular}
-    \caption{MTE cycles per instruction when latency- and throughput-bound (lower is better), and micro-ops per instruction.}
-    \label{tab:instruction-latencies}
 \end{table}
 
 \subsection{Tagging Primitives}
@@ -204,6 +204,8 @@ The instructions \texttt{stzg} and \texttt{stgp} implicitly set the granule to z
 \begin{table}[h]
     \centering
     \small
+    \caption{MTE benchmarking variants.}
+    \label{tab:stg-instructions}
     \begin{tabular}{c || c | c | c | c }
         \textbf{Variant} & \textbf{Instruction} & \textbf{Granule size} & \textbf{Implicit zero} & \textbf{memset} \\
         \hline
@@ -215,8 +217,6 @@ The instructions \texttt{stzg} and \texttt{stgp} implicitly set the granule to z
         stg+memset       & \texttt{stg}         & 16                    & No                     & Yes             \\
         st2g+memset      & \texttt{st2g}        & 32                    & No                     & Yes             \\
     \end{tabular}
-    \caption{MTE benchmarking variants.}
-    \label{tab:stg-instructions}
 \end{table}
 
 We run the benchmark on our testbed (see \cref{sec:experimental-setup}) tagging a 128\,MiB memory region.
