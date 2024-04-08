@@ -304,25 +304,29 @@ However, only some stack allocations need to be turned into segments.
 We can omit allocations that do not escape or are only accessed using statically verifiable indices.
 Creating segments for these would result in excessive runtime and memory overhead, as each allocation would need to be aligned to 16\,bytes and processed when entering and returning from a function.
 
-To address this, we design an algorithm that identifies safe memory regions within the stack that do not require protection, thus avoiding creating segments for the slots mentioned above.
+To address this, we design an algorithm (\cref{fig:stack-safety-pseudo}) that identifies safe memory regions within the stack that do not require protection, thus avoiding creating segments for the slots mentioned above.
 Below, we present a simplified version of our algorithm.
 We iterate over all stack allocations and check if the allocation (a) escapes the function or (b) is indexed into using an unsafe \ac{GEP} instruction.
 
-\begin{algorithmic}
-    \State $allocsToInstrument \gets \emptyset$
-    \For{$alloc \in allocations$}
-        \If{escapes($alloc$)}
+\begin{figure}
+    \begin{algorithmic}
+        \State $allocsToInstrument \gets \emptyset$
+        \For{$alloc \in allocations$}
+            \If{escapes($alloc$)}
+                \State $allocsToInstrument \gets allocsToInstrument \cup \{\,alloc\,\}$
+            \ElsIf{isUsedByUnsafeGEP($alloc$)}
             \State $allocsToInstrument \gets allocsToInstrument \cup \{\,alloc\,\}$
-        \ElsIf{isUsedByUnsafeGEP($alloc$)}
-        \State $allocsToInstrument \gets allocsToInstrument \cup \{\,alloc\,\}$
-        \EndIf
-    \EndFor
+            \EndIf
+        \EndFor
 
-    \For{$alloc \in allocsToInstrument$}
-        \State insertTaggingCode($alloc$)
-        \State insertUntaggingCode($alloc$)
-    \EndFor
-\end{algorithmic}
+        \For{$alloc \in allocsToInstrument$}
+            \State insertTaggingCode($alloc$)
+            \State insertUntaggingCode($alloc$)
+        \EndFor
+    \end{algorithmic}
+    \caption{Algorithm to detect and harden safe and unsafe stack allocations.}
+    \label{fig:stack-safety-pseudo}
+\end{figure}
 
 \subsection{Example}
 \label{subsec:example2}
