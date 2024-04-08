@@ -1,6 +1,7 @@
 \chapter{\abstractname}
+\label{ch:abstract}
 
-In this thesis, we investigate the design and implementation of an extension to \acf*{WASM} to address the issue of memory safety vulnerabilities, especially in languages like C and C++ that compile to \acs*{WASM}.
+In this thesis, we investigate the design and implementation of an extension to \acf*{WASM} addressing the issue of memory safety vulnerabilities, particularly in languages like C and C++ that compile to \acs*{WASM}.
 Despite \acs*{WASM}'s sandboxing feature that isolates applications from other instances and the host, these languages are still prone to some memory safety bugs due to their lack of memory safety provided by the type system or prevalent libraries.
 This thesis introduces a minimally invasive extension to \acs*{WASM} designed to allow implementations to utilize diverse hardware- or software-based memory safety mechanisms.
 
@@ -10,10 +11,11 @@ We showcase an implementation utilizing ARM's hardware-based \acf*{MTE}, offerin
 We further explore the possibility of integrating \acs*{MTE} into \acs*{WASM}'s sandboxing mechanism, improving the performance of programs relying on expensive software-based bounds checks.
 The empirical evaluation we conduct on actual hardware platforms validates our proposed system's practicality and performance advantages.
 
-The research adds to the WebAssembly and memory safety domain by introducing a generic, minimally invasive extension with low overhead.
+Our work adds to the WebAssembly and memory safety domain by introducing a generic, minimally invasive extension with low overhead.
 It sets a groundwork for further studies, suggesting directions for improving compatibility, optimizing performance, and incorporating various memory safety mechanisms.
 
-\chapter{Zusammenfassung}\label{ch:zusammenfassung}
+\chapter{Zusammenfassung}
+\label{ch:zusammenfassung}
 
 In dieser Arbeit untersuchen wir den Entwurf und die Implementierung einer Erweiterung von \acf*{WASM}, um das Problem der Speichersicherheitsschwachstellen zu lösen, insbesondere in Sprachen wie C und C++, die nach \acs*{WASM} kompiliert werden.
 Trotz der Sandboxing-Funktion von \acs*{WASM}, die Anwendungen von anderen Instanzen und dem Host isoliert, sind diese Sprachen immer noch anfällig für einige Speichersicherheitsfehler, da sie keine Speichersicherheit durch das Typsystem oder gängige Bibliotheken bieten.

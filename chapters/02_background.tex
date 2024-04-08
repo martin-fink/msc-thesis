@@ -1,12 +1,13 @@
 \chapter{Background}
 \label{ch:background}
 
-In this chapter, we discuss Memory Safety, \ac{WASM}, and ARM's \ac{PAC}, and \ac{MTE} extensions.
+In this chapter we discuss the necessary background on which our work builds upon.
+We start by discussing \ac{WASM}, memory safety in the context of \ac{WASM} and ARM's \ac{PAC} and \ac{MTE} hardware extensions.
 
 \section{WebAssembly}
 \label{sec:wasm}
 
-WebAssembly~\cite{haas2017bringing}, initially designed as an alternative, high-performance compilation target to JavaScript, continues to be applied in various use cases.
+\Acl{WASM}~\cite{haas2017bringing}, initially designed as an alternative, high-performance compilation target to JavaScript, continues to be applied in various use cases.
 \Ac{WASM} was carefully designed to allow compilation from high-performance languages traditionally compiled to native machine code such as C, C++, or Rust and for compilation to different native architectures.
 \begin{description}
     \item[Linear memory:] \Ac{WASM} provides a linear memory that can be accessed by 32 or 64\,bit integers.
