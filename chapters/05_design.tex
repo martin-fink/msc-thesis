@@ -1,7 +1,7 @@
 \chapter{Design}
 \label{ch:design}
 
-In this chapter, we define our threat model, \ac{WASM} extension, and design to provide memory safety for programs compiled to \ac{WASM}.
+This chapter defines our threat model, \ac{WASM} extension, and design to provide memory safety for programs compiled to \ac{WASM}.
 
 \section{Threat Model}
 \label{sec:threat-model}
@@ -69,8 +69,7 @@ We assume that the operating system and underlying target architecture are free 
 This does not include assumptions about potential spectre-like~\cite{kocher2020spectre} attacks.
 The compiler needs to ensure that bounds checks are guarded against side-channel attacks.
 
-Additionally, we do not consider exploits of the program running in the sandbox as vulnerabilities.
-Regarding the runtime, as long as exploits are contained within the sandbox, the security objectives have been met.
+Additionally, we do not consider exploits of the program running in the sandbox as vulnerabilities as long as they stay contained in the sandbox.
 
 \section{Overview}
 \label{sec:overview}
@@ -86,7 +85,7 @@ Figure~\ref{fig:overview} presents an overview of our prototype.
 
 At build time, the unmodified C/C++ sources and a modified version of libc are compiled using LLVM~\cite{lattner2004llvm}.
 After optimizations, a stack sanitizer analyzes all functions and inserts instrumentation as necessary.
-LLVM's backend then generates WebAssembly binaries that can be deployed and executed on a wide variety of devices.
+LLVM's backend then generates WebAssembly binaries that can be deployed and executed on various devices.
 
 \section{WebAssembly Extension}
 \label{sec:wasm-extension}
@@ -98,7 +97,7 @@ This allows us to allocate and store up to 16 bits of metadata per pointer.
 
 For our extension, we introduce the notion of abstract segments and tagged pointers.
 We introduce three new instructions that allow the creation of abstract segments and tagged pointers from raw pointers.
-These pointers carry provenance and can only access the segment they were created for.
+These pointers carry provenance and can only access the segment they were created with.
 Conversely, segments can only be accessed by the tagged pointer created with them rather than with raw indices without provenance.
 
 \begin{equation*}
@@ -139,7 +138,7 @@ More details can be found in \cref{sec:future-work}.
 
 In \cref{fig:typing-rules}, we extend the typing rules in the \ac{WASM} paper~\cite{haas2017bringing} in the notation of \citeauthor*{pierce2002types}~\cite{pierce2002types}.
 The rules are of the form of $C \vdash e : \mathit{tf}$.
-An instruction $e$ is valid under the context $C$, with $C_\text{memory}$ being used to access a component of the context, in this case the memory.
+An instruction $e$ is valid under the context $C$, with $C_\text{memory}$ being used to access a context component, such as the memory.
 The rule $C_\text{memory} = n$ ensures that the instruction can only be used when a memory is declared.
 The rule $2^a=16$ ensures the alignment is 16\,bytes, as described in the previous section.
 The type $\mathit{tf} = t_1^* \rightarrow t_2^*$ describes how the instruction manipulates the operand stack.
@@ -169,9 +168,9 @@ The instruction $e$ expects an operand stack where it pops off $t_1^*$ and pushe
 \label{subsec:small-step-reduction-rules}
 
 In \cref{fig:smallstep-rules}, we extend the small-step reduction rules from the WASM paper~\cite{haas2017bringing} using the notation established by \citeauthor*{plotkin1981structural}~\cite{plotkin1981structural}.
-The lower portion of  \cref{fig:smallstep-rules} presents new tag-aware load/store rules that take precedence over the existing ones, as well as new rules for the introduced instructions.
+The lower portion of  \cref{fig:smallstep-rules} presents new tag-aware load/store rules that take precedence over the existing ones and new rules for the introduced instructions.
 
-We reuse operators from the original WASM rules, including the \textbf{trap} operator to signal a trap.
+To signal a trap, we reuse operators from the original WASM rules, including the \textbf{trap} operator.
 The state, $s$, is augmented with a storage mechanism that assigns a tag $t$, to each memory byte.
 We use the following notation:
 
@@ -185,7 +184,7 @@ We use the following notation:
 
 \Cref{fig:smallstep-rules} highlights the added and modified components in the rules.
 The added load/store rules, specified in \cref{eq:smallstep-1,eq:smallstep-2}, enforce trapping on tag mismatches.
-The rules for the execution of the new instructions, which modify the state by setting tags, are presented in \cref{eq:smallstep-3,eq:smallstep-4,eq:smallstep-5}.
+The rules for executing the new instructions, which modify the state by setting tags, are presented in \cref{eq:smallstep-3,eq:smallstep-4,eq:smallstep-5}.
 Each reduction rule is depicted with the operand stack's top and state $s$ on the left-hand side, representing the pre-execution state, and the resulting stack and state after the execution of instruction $i$ on the right-hand side.
 
 \begin{figure}[t]
@@ -276,9 +275,9 @@ void *malloc(size_t length) {
 \end{lstlisting}
 
 When compiled to \ac{WASM}, we see just three new instructions added to the generated code (\cref{line:segment-new-heap-1,line:segment-new-heap-2,line:segment-new-heap-3}).
-This proves that our extension is minimally invasive, as calling code does not need to be changed and will continue to work as-is.
+This proves that our extension is minimally invasive, as the calling code does not need to be changed and will continue to work as-is.
 
-Similarly, when freeing or reallocating memory the allocator needs to ensure the no longer valid memory is retagged.
+Similarly, when freeing or reallocating memory, the allocator needs to ensure that the no longer valid memory is retagged.
 
 \begin{lstlisting}[frame=h,style=customwasm,
     label={lst:wasm-allocator-example},escapechar=|]
@@ -302,7 +301,7 @@ Before returning, all stack slots are untagged and reassigned to the stack frame
 This allows other functions to use the memory and prevents stack slots from being accessed after returning from a function.
 
 However, only some stack allocations need to be turned into segments.
-We can omit allocations that do not escape or allocations that are only accessed using statically verifiable indices.
+We can omit allocations that do not escape or are only accessed using statically verifiable indices.
 Creating segments for these would result in excessive runtime and memory overhead, as each allocation would need to be aligned to 16\,bytes and processed when entering and returning from a function.
 
 To address this, we design an algorithm that identifies safe memory regions within the stack that do not require protection, thus avoiding creating segments for the slots mentioned above.

@@ -13,7 +13,7 @@ The extension is created to be minimally invasive and implementable using variou
     \label{fig:system-overview}
 \end{figure}
 
-In \cref{fig:system-overview} we present our prototype of this design.
+In \cref{fig:system-overview}, we present our prototype of this design.
 Unmodified C/C++ source code is compiled using LLVM~\cite{lattner2004llvm}, where we implement a sanitizer that identifies and hardens stack allocations, along with a modified standard library based on \ac{WASI} that protects heap allocations.
 LLVM then generates hardened \ac{WASM} binaries that can be run in wasmtime\footnote{\url{https://wasmtime.dev/}}.
 We modify wasmtime to process our \ac{WASM} extension and implement it using \ac{MTE}.

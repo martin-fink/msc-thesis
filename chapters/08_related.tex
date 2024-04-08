@@ -28,10 +28,10 @@ We thus choose this tradeoff, as utilizing \ac{MTE} allows our implementation to
 \subsection{RichWasm}
 \label{subsec:richwasm}
 
-RichWasm is a richly-typed intermediate language for safe memory interactions between languages with varying memory management models~\cite{paraskevopoulou2024richwasm}.
+RichWasm is a richly typed intermediate language for safe memory interactions between languages with varying memory management models~\cite{paraskevopoulou2024richwasm}.
 It allows for static detection of memory safety violations and is especially beneficial for mixed-language interoperability.
 
-RichWasm is intended for use as a compilation target for safe languages like Rust or OCaml, which have strong memory safety guarantees encoded in their type systems.
+RichWasm is intended as a compilation target for safe languages like Rust or OCaml, which have strong memory safety guarantees encoded in their type systems.
 Languages like C, which lack information for static type safety analysis, are not directly supported by RichWasm's type-driven safety model.
 
 \subsection{Pointer Authentication}
@@ -50,12 +50,12 @@ In this section, we discuss several approaches to provide memory safety for C ou
 \subsection{Memory-Safe C Language Dialects}
 \label{subsec:extensions-to-the-c-language}
 
-Several projects such as CCured~\cite{necula2002ccured} or Cyclone~\cite{jim2002cyclone} implement memory safety by extending the C language.
-Their approach adds information about allocations, but requires manual changes to existing code.
-CHERI C/C++~\cite{watson_cheri_2020} goes into a similar direction, widening pointers to 128\,bits.
-CHERI C/C++ can be compiled in one of two modes: (1) purecap mode, where all pointers are capabilities and the compiler restricts them to allocations, automatically providing memory safety and (2) hybrid mode, where pointers remain 64\,bits wide.
-Programmers can annotate pointers, which transforms them into capabilities, allowing capability-aware and unmodified code to be mixed.
-All of these approaches break binary compatibility by storing metadata in a fat pointer representation.
+Several projects, such as CCured~\cite{necula2002ccured} or Cyclone~\cite{jim2002cyclone}, implement memory safety by extending the C language.
+Their approach adds information about allocations but requires manual changes to existing code.
+CHERI C/C++~\cite{watson_cheri_2020} goes in a similar direction, widening pointers to 128\,bits.
+CHERI C/C++ can be compiled in one of two modes: (1) purecap mode, where all pointers are capabilities and the compiler restricts them to allocations, automatically providing memory safety, and (2) hybrid mode, where pointers remain 64\,bits wide.
+Programmers can annotate pointers, transforming them into capabilities, allowing to mix capability-aware and unmodified code.
+These approaches break binary compatibility by storing metadata in a fat pointer representation.
 
 \subsection{Instrumentation-Based Memory Safety}
 \label{subsec:automatic-approaches}
@@ -65,12 +65,12 @@ We can divide these approaches into three major categories: (1) trip-wire-based,
 
 \subsubsection{Trip-Wire-Based Approach}
 
-Trip-Wire-Based projects guard zones around allocations to catch memory safety errors.
+Trip-wire-based projects guard zones around allocations to catch memory safety errors.
 Some projects that fall into this category are \ac{ASAN}~\cite{serebryany2012addresssanitizer}, GWP-ASan~\cite{serebryany2023gwp}, or Valgrind Memcheck~\cite{nethercote2007valgrind}.
 In the case of \ac{ASAN}, $\sfrac{1}{8}$ of the whole address space is mapped as shadow memory, with one bit of shadow memory representing the state of one byte of memory.
-When allocating memory, the allocation is padded and guard zones around the allocation are marked as inaccessible.
+When allocating memory, the allocation is padded, and guard zones around the allocation are marked as inaccessible.
 When freeing memory, the whole memory block is marked as inaccessible.
-The sanitizer inserts checks before each memory access that checks the address currently being accessed.
+The sanitizer inserts checks before each memory access that check the address being accessed.
 \Ac{ASAN} was built as a debugging tool to be used when running tests or fuzzing programs, as it has an average overhead of 73\,\%.
 
 GWP-ASan~\cite{serebryany2023gwp} is intended to be deployed in production.
@@ -86,8 +86,8 @@ For object-based approaches, the metadata is associated with the allocated objec
 A notable project in this area is Baggy Bounds Checking~\cite{akritidis2009baggy}, which aligns and pads allocations to powers of two to speed up bounds checks at runtime.
 Metadata about the allocation can be efficiently retrieved thanks to the alignment of the allocation.
 Usually, pointers are checked when doing pointer arithmetic, not when dereferencing pointers.
-This poses a challenge for C, as the language permits out-of-bounds pointers, as long as they are not dereferenced.
-Intra-object safety is more challenging for the object-based-approaches, as enforcing those additional constraints may require more sophisticated data structures.
+This poses a challenge for C, as the language permits out-of-bounds pointers as long as they are not dereferenced.
+Intra-object safety is more challenging for object-based approaches, as enforcing those additional constraints may require more sophisticated data structures.
 Baggy Bounds Checking does not support this intra-object safety.
 
 \subsubsection{Pointer-Based Approach}
@@ -95,21 +95,21 @@ Baggy Bounds Checking does not support this intra-object safety.
 In contrast, pointer-based approaches keep track of the pointer bounds.
 These can be either stored in the pointer, as fat pointers~\cite{watson_cheri_2020} or in unused bits~\cite{serebryany2018memory} or in an external data structure~\cite{nagarakatte2009softbound}.
 One project in this domain is SoftBound~\cite{nagarakatte2009softbound}.
-It keeps track of the upper and lower bounds of each pointer, instrumenting memory accesses to check if the pointer is within its bounds.
-This allows to implement intra-object memory safety, as multiple pointers with different bounds may point to overlapping regions.
+It keeps track of each pointer's upper and lower bounds, instrumenting memory accesses to check if the pointer is within its bounds.
+This allows the implementation of intra-object memory safety, as multiple pointers with different bounds may point to overlapping regions.
 Additionally, creating out-of-bounds pointers is not an issue, as pointer arithmetic is not checked.
-SoftBound keeps track of pointers stored in memory in the form of a separate data structure, where bounds are looked up and stored to when loading and storing pointers from and to memory.
-Similarly, when passing pointers to and from functions, the bounds need to be propagated as additional arguments and return values.
+SoftBound keeps track of pointers stored in memory in a separate data structure, where bounds are looked up and stored when loading and storing pointers from and to memory.
+Similarly, the bounds must be propagated as additional arguments and return values when passing pointers to and from functions.
 
-CHERI~\cite{woodruff2014cheri} is an implementation of a pointer-based approach with hardware support.
+CHERI~\cite{woodruff2014cheri} implements a pointer-based approach with hardware support.
 It extends pointers to 128\,bits, including permission and compressed bounds.
 Pointer dereferences are checked by hardware, promising much better performance than software-based checks.
-Currently, hardware exists in the form of the ARM Morello board~\cite{UCAM-CL-TR-982}, a limited-production development board, shipped to selected academic and industry partners.
+Currently, hardware exists in the form of the ARM Morello board~\cite{UCAM-CL-TR-982}, a limited-production development board shipped to selected academic and industry partners.
 
 \subsubsection{Hybrid Approaches}
 
 We consider memory-tagging-based approaches as a hybrid of object- and pointer-based approaches.
-\Ac{HWASAN}~\cite{serebryany2018memory} or \ac{MTE} both associate metadata with the pointer in its upper, unused bits, and with objects by assigning tags to memory.
+\Ac{HWASAN}~\cite{serebryany2018memory} or \ac{MTE} both associate metadata with the pointer in its upper, unused bits and with objects by assigning tags to memory.
 In the case of \ac{HWASAN}, only memory accesses are instrumented, while memory accesses are checked by hardware with \ac{MTE}.
 This again allows out-of-bounds pointers to exist if they are not dereferenced.
 However, intra-object safety is not possible to implement, similar to object-based approaches.
@@ -119,7 +119,7 @@ In the case of both \ac{HWASAN} and \ac{MTE}, binary compatibility is preserved,
 \label{subsec:hardened-memory-allocators}
 
 A few memory allocators have implemented support for \ac{MTE}.
-These provide probabilistic memory safety against both spatial and temporal memory safety, as long as no tag collisions occur.
+These provide probabilistic memory safety against both spatial and temporal memory safety as long as no tag collisions occur.
 
 \begin{itemize}
     \item Scudo Hardened Allocator (used in Android): A security-oriented allocator providing defense mechanisms against heap-based vulnerabilities~\cite{scudo_allocator}.
@@ -129,4 +129,4 @@ These provide probabilistic memory safety against both spatial and temporal memo
 
 \paragraph{}
 The Cling memory allocator~\cite{akritidis2010cling} uses a different approach to prevent use-after-free exploits by placing heap metadata out-of-band and reusing memory only for objects of the same type.
-It achieves this by analyzing the call stack to determine the type of data being allocated and works as a drop-in replacement, without any code changes.
+It achieves this by analyzing the call stack to determine the type of data being allocated, and it works as a drop-in replacement without any code changes.

@@ -1,8 +1,8 @@
 \chapter{Motivation}
 \label{ch:motivation}
 
-While WebAssembly provides strong safety and security guarantees, as discussed in \cref{sec:wasm}, they mainly guarantee safety for the host, but not the program itself.
-In~\cite{lehmann2020everything}, \citeauthor*{lehmann2020everything} show that while some attack surfaces, such as injecting shellcode or jumping to arbitrary addresses, are mitigated by the design of WebAssembly, others, such as buffer overflows or write accesses to static, read-only data is possible and being used to exploit programs running in the wild.
+While WebAssembly provides strong safety and security guarantees, as discussed in \cref{sec:wasm}, they mainly guarantee safety for the host, but not for the program itself.
+In~\cite{lehmann2020everything}, \citeauthor*{lehmann2020everything} show that while some attack surfaces, such as those injecting shellcode or jumping to arbitrary addresses, are mitigated by the design of WebAssembly, others, such as buffer overflows or write accesses to static, read-only data is possible and being used to exploit programs running in the wild.
 Such cases need to be mitigated at the language level by rewriting software in a safe language such as Rust, manually inserting bounds checks, which is error-prone, or inserting checks using the compiler and sanitizing the code.
 
 Additionally, bugs like {CVE-2023-4863}~\cite{CVE-2023-4863} continue to be exploited, showing that memory safety is not a solved problem.
