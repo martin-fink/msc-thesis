@@ -7,8 +7,8 @@ This chapter defines our threat model, \ac{WASM} extension, and design to provid
 \label{sec:threat-model}
 
 In our threat model (\cref{fig:threat-model}), we differentiate between two aspects of memory safety.
-In both models, we depict trusted components (\raisebox{-0.25em}{\includegraphics[clip,height=1em]{./figures/build/trusted}}) in green and untrusted components in red (\raisebox{-0.25em}{\includegraphics[clip,height=1em]{./figures/build/untrusted}}).
-We additionally highlight the point of interest with a sightglass symbol (\raisebox{-0.25em}{\includegraphics[clip,height=1em]{./figures/build/poi}}).
+In both models, we depict trusted components (marked with a \raisebox{-0.25em}{\includegraphics[clip,height=1em]{./figures/build/trusted}}) in green and untrusted components (marked with a \raisebox{-0.25em}{\includegraphics[clip,height=1em]{./figures/build/untrusted}}) in red.
+We additionally highlight the component we are trying to harden (marked with a \raisebox{-0.25em}{\includegraphics[clip,height=1em]{./figures/build/poi}}).
 
 \begin{figure}
     \centering
