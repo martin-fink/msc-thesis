@@ -18,7 +18,7 @@ Unmodified C/C++ source code is compiled using LLVM~\cite{lattner2004llvm}, wher
 LLVM then generates hardened \ac{WASM} binaries that can be run in wasmtime\footnote{\url{https://wasmtime.dev/}}.
 We modify wasmtime to process our \ac{WASM} extension and implement it using \ac{MTE}.
 
-Additionally, we explore and implement a technique to efficiently sandbox \ac{WASM} programs using \ac{MTE}, eliminating expensive software-based bounds checks required for 64\,bit \ac{WASM} programs.
+Additionally, we explore and implement a technique to efficiently sandbox \ac{WASM} programs using \ac{MTE}, eliminating expensive software-based bounds checks required for 64-bit \ac{WASM} programs.
 This technique can be combined with the \ac{MTE}-based memory safety implementation.
 
-We analyze and benchmark various aspects of our implementation, including 32\,bit and 64\,bit \ac{WASM}, and the \ac{MTE} implementation on real hardware (see \cref{ch:eval}).
+We analyze and benchmark various aspects of our implementation, including 32-bit and 64-bit \ac{WASM}, and the \ac{MTE} implementation on real hardware (see \cref{ch:eval}).

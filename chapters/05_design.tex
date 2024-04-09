@@ -94,8 +94,8 @@ LLVM's backend then generates WebAssembly binaries that can be deployed and exec
 \label{sec:wasm-extension}
 
 We designed an extension to WebAssembly that provides primitives to the modified standard library and the stack sanitizer to guarantee memory safety for selected allocations.
-Our extension builds on wasm64, the 64\,bit variant of WebAssembly.
-We choose wasm64, because it uses a 64\,bit integer index type, with 48 of those bits used to index memory.
+Our extension builds on wasm64, the 64-bit variant of WebAssembly.
+We choose wasm64, because it uses a 64-bit integer index type, with 48 of those bits used to index memory.
 This allows us to allocate and store up to 16 bits of metadata per pointer.
 
 For our extension, we introduce the notion of abstract segments and tagged pointers.

@@ -10,7 +10,7 @@ We start by discussing \ac{WASM}, memory safety in the context of \ac{WASM} and 
 \Acl{WASM}~\cite{haas2017bringing}, initially designed as an alternative, high-performance compilation target to JavaScript, continues to be applied in various use cases.
 \Ac{WASM} was carefully designed to allow compilation from high-performance languages traditionally compiled to native machine code such as C, C++, or Rust and for compilation to different native architectures.
 \begin{description}
-    \item[Linear memory:] \Ac{WASM} provides a linear memory that can be accessed by 32 or 64\,bit integers.
+    \item[Linear memory:] \Ac{WASM} provides a linear memory that can be accessed by 32 or 64-bit integers.
     This allows the compilers and languages to manage memory without being forced into an unnatural idiom.
     Languages may ship their allocators, garbage collectors, and layout data structures as efficiently as possible.
     This linear memory can then be mapped directly to the virtual memory on the host.
@@ -21,7 +21,7 @@ We start by discussing \ac{WASM}, memory safety in the context of \ac{WASM} and 
     \item[Stack machine:] Since compilation targets offer different sets of registers, \ac{WASM} does not expose registers but instead operates on a typed stack.
     The stack can be verified to be well-typed and compiled to diverse targets, such as register machines or \acp{IR} in a single pass.
     No assumptions about the number of guest registers are made, as these can vary between different architectures and runtimes, as they might reserve some registers for their own use (e.g., dedicating a register to hold some global state).
-    \item[Limited datatypes:] \Ac{WASM} defines four basic data types: 32\, and 64\,bit integer and floating-point types.
+    \item[Limited datatypes:] \Ac{WASM} defines four basic data types: 32\, and 64-bit integer and floating-point types.
     Different proposals add \mbox{vector-}, \mbox{garbage-collected-}, and reference types covering other use cases.
     There is no distinction between pointer- and integer types.
     While this loses information present in the original program, such as pointer provenance, and prevents some optimizations, this is not considered a problem.
@@ -38,7 +38,7 @@ Then, the memory access is performed relative to the memory's base address.
 In current runtimes, this is usually achieved using two major approaches.
 \begin{description}
     \item[Explicit bounds checks:] An explicit bounds check is inserted before each memory access, comparing the index with the bound of the current memory.
-    \item[Guard pages:] When running 32\,bit \ac{WASM} on 64\,bit hosts, the runtime can leverage the fact that virtual memory is abundant.
+    \item[Guard pages:] When running 32-bit \ac{WASM} on 64-bit hosts, the runtime can leverage the fact that virtual memory is abundant.
     For each linear memory, $2^{32}$\,bytes, or 4\,GiB of virtual memory are allocated, with the memory beyond the guard being marked as inaccessible.
     The \ac{MMU} will catch accesses into these pages, and the operating system will deliver a segmentation fault to the runtime, which will deliver a trap to the \ac{WASM} program.
 \end{description}
@@ -89,7 +89,7 @@ These provide security primitives that compilers or programmers can use to provi
     \label{fig:aarch64-pointer}
 \end{figure}
 
-In \cref{fig:aarch64-pointer}, we show the layout of pointer bits used for address translation in aarch64, the 64\,bit variant of the ArmV8 instruction set~\cite{ARMA2024Arch64}, when running on Linux.
+In \cref{fig:aarch64-pointer}, we show the layout of pointer bits used for address translation in aarch64, the 64-bit variant of the ArmV8 instruction set~\cite{ARMA2024Arch64}, when running on Linux.
 Only 48 out of the available 64\ bits are used to address memory, while the remaining bits are set to either 0 or 1 to differentiate between kernel and userspace addresses but are unused for further address translation.
 Hardware extensions such as \ac{TBI}, \ac{MTE} (\cref{subsec:mte}), or \ac{PAC} (\cref{subsec:pac}) utilize those unused bits to store metadata.
 
@@ -99,7 +99,7 @@ Hardware extensions such as \ac{TBI}, \ac{MTE} (\cref{subsec:mte}), or \ac{PAC} 
 ARMs \Ac{MTE}, available from ArmV8.5, provides a building block to prevent spatial and temporal memory safety violations~\cite{ARM2019MTE}.
 \Ac{MTE} implements a lock-and-key mechanism where memory regions can be tagged with one of 16 distinct tags, and memory access is only allowed using pointers with the corresponding keys.
 
-The locking mechanism is implemented by storing a 4\,bit tag in bits 56--59 of an address (referred to as the logical tag).
+The locking mechanism is implemented by storing a 4-bit tag in bits 56--59 of an address (referred to as the logical tag).
 Accordingly, a tag is assigned to memory with a granularity of 16\,bytes (referred to as the allocation tag).
 
 On Linux, each process can configure \ac{MTE} by switching between the following modes:
