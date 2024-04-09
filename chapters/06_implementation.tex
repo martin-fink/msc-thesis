@@ -16,9 +16,9 @@ We modify the existing \ac{WASM} backend and add support for the extension descr
 In the middle end, we introduce three new intrinsic functions that correspond and are lowered to our \ac{WASM} instructions by the backend.
 
 \begin{itemize}
-  \item \lstinline[style=customc,language=llvm]{ptr @llvm.wasm.segment.new(ptr, i64)}
-  \item \lstinline[style=customc,language=llvm]{void @llvm.wasm.segment.set_tag(ptr, ptr, i64)}
-  \item \lstinline[style=customc,language=llvm]{void @llvm.wasm.segment.free(ptr, i64)}
+  \item[] \lstinline[style=customc,language=llvm]{ptr @llvm.wasm.segment.new(ptr, i64)}
+  \item[] \lstinline[style=customc,language=llvm]{void @llvm.wasm.segment.set_tag(ptr, ptr, i64)}
+  \item[] \lstinline[style=customc,language=llvm]{void @llvm.wasm.segment.free(ptr, i64)}
 \end{itemize}
 
 \noindent
@@ -53,7 +53,7 @@ The clang front end or a sanitizer pass can insert calls to these intrinsic func
   \caption{Flags added to LLVM.}
   \label{tab:llvm-flags}
   \begin{tabular}{l | l | l}
-    \textbf{Flag} & \textbf{Description} & \textbf{Required Flag} \\
+    \textbf{Flag} & \textbf{Description} & \textbf{Required Flags} \\
     \hline
     \texttt{-mmem-safety}              & Enable the memory safety extension. & \\
     \texttt{-fsanitize=wasm-memsafety} & Enable the stack sanitizer. & \texttt{-mmem-safety} \\
@@ -74,9 +74,9 @@ This serves two purposes: (1) subsequent code is able to access the memory throu
 To create and manipulate segments manually, e.g., to build a segment-aware memory allocator, we expose the memory safety features to C in the form of built-in functions that clang lowers to calls to the corresponding LLVM intrinsics.
 
 \begin{itemize}
-  \item \lstinline[style=customc]{void *__builtin_wasm_segment_new(void *, unsigned long);}
-  \item \lstinline[style=customc]{void __builtin_wasm_segment_set_tag(void *, void *, unsigned long);}
-  \item \lstinline[style=customc]{void __builtin_wasm_segment_free(void *, unsigned long);}
+  \item[] \lstinline[style=customc]{void *__builtin_wasm_segment_new(void *, unsigned long);}
+  \item[] \lstinline[style=customc]{void __builtin_wasm_segment_set_tag(void *, void *, unsigned long);}
+  \item[] \lstinline[style=customc]{void __builtin_wasm_segment_free(void *, unsigned long);}
 \end{itemize}
 
 \noindent
@@ -113,11 +113,11 @@ When freeing or reallocating memory, segments are freed, ensuring temporal safet
   \caption{Flags added to wasmtime.}
   \label{tab:wasmtime-flags}
   \begin{tabular}{l | l | l}
-    \textbf{Flag} & \textbf{Description} & \textbf{Required Flag} \\
+    \textbf{Flag} & \textbf{Description} & \textbf{Required Flags} \\
     \hline
     \texttt{-C mte}               & Enable the use of \ac{MTE}. & \\
     \texttt{-C mte-bounds-checks} & Use \ac{MTE} for bounds checks. & \texttt{-C mte} \\
-    \texttt{-W mem-safety}        & Enable the memory safety extension. & \texttt{-C mte}, \texttt{-W memory64} \\
+    \texttt{-W mem-safety}        & Enable the memory safety extension. & \texttt{-C mte -W memory64} \\
   \end{tabular}
 \end{table}
 

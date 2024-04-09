@@ -86,7 +86,6 @@ Additionally, we do not consider exploits of the program running in the sandbox 
 \end{figure*}
 
 Figure~\ref{fig:overview} presents an overview of our prototype.
-
 At build time, the unmodified C/C++ sources and a modified version of libc are compiled using LLVM~\cite{lattner2004llvm}.
 After optimizations, a stack sanitizer analyzes all functions and inserts instrumentation as necessary.
 LLVM's backend then generates WebAssembly binaries that can be deployed and executed on various devices.

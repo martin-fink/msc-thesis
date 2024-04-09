@@ -229,15 +229,15 @@ Before each run, we request a fresh piece of memory with \texttt{mmap} and run t
     \label{fig:stg-performance}
 \end{figure}
 
-We perform all runs on each type of CPU core on the Pixel 8.
-In \cref{fig:stg-performance}, we can see the results.
+We perform all runs on each type of CPU core on the Pixel 8 and illustrate the results in \cref{fig:stg-performance}.
 As expected, the instructions implicitly setting the memory to zero are faster than tagging and then zeroing using an explicit memset.
 Both \texttt{stzg} and \texttt{stgp} are only slightly slower than a raw memset, as their memory accesses do not need to perform tag checks~\cite{ARMA2024Arch64}.
 
-Surprisingly, \texttt{st2g} is slightly faster than \texttt{stg}.
-The results in this benchmark contradict the numbers we have seen in \cref{subsec:instruction-latencies-and-throughput}, as \cref{subsec:instruction-latencies-and-throughput} operates on filled data caches, while we explicitly clear data caches before each run.
-Additionally, we measure execution time instead of cycles.
-We see lower runtimes for the Cortex-X3 compared to the Cortex-A720, even though it features higher cycles per instructions for two reasons: (1) the Cortex-X3 is clocked at a higher frequency, and (2) it features larger data caches.
+Contrary to our expectations, \texttt{st2g} is only marginally faster than \texttt{stg}.
+This finding contradicts the data presented in \cref{subsec:instruction-latencies-and-throughput}, where operations are performed with pre-filled data caches.
+In these benchmarks, we specifically measure wall clock time, not processor cycles, to evaluate performance when tagging a large region of memory immediately after requesting it from the operating system.
+This approach involves requesting a fresh segment of memory before each execution.
+The Cortex-X3 achieves shorter execution times than the Cortex-A720, despite us measuring lower instructions executed per cycle, due to its higher clock speed.
 
 \subsection{Synchronous and Asynchronous Mode}
 \label{subsec:synchronous-and-asynchronous-mode}
