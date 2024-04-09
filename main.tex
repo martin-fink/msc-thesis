@@ -29,59 +29,59 @@
 
 % Set page numbering to avoid "destination with the same identifier has been already used" warning for cover page.
 % (see https://en.wikibooks.org/wiki/LaTeX/Hyperlinks#Problems_with_Links_and_Pages).
-\pagenumbering{alph}
-\input{pages/cover}
+    \pagenumbering{alph}
+    \input{pages/cover}
 
-\frontmatter{}
+    \frontmatter{}
 
-\input{pages/title}
-\input{pages/disclaimer}
-\input{pages/acknowledgments}
-\input{pages/abstract}
-\microtypesetup{protrusion=false}
-\tableofcontents{}
-\microtypesetup{protrusion=true}
+    \input{pages/title}
+    \input{pages/disclaimer}
+    \input{pages/acknowledgments}
+    \input{pages/abstract}
+    \microtypesetup{protrusion=false}
+    \tableofcontents{}
+    \microtypesetup{protrusion=true}
 
-\mainmatter{}
+    \mainmatter{}
 
-\input{chapters/01_introduction}
-\input{chapters/02_background}
-\input{chapters/03_motivation}
-\input{chapters/04_overview}
-\input{chapters/05_design}
-\input{chapters/06_implementation}
-\input{chapters/07_evaluation}
-\input{chapters/08_related}
-\input{chapters/09_conclusion}
+    \input{chapters/01_introduction}
+    \input{chapters/02_background}
+    \input{chapters/03_motivation}
+    \input{chapters/04_overview}
+    \input{chapters/05_design}
+    \input{chapters/06_implementation}
+    \input{chapters/07_evaluation}
+    \input{chapters/08_related}
+    \input{chapters/09_conclusion}
 
-\appendix{}
+    \appendix{}
 
-\input{chapters/10_appendix}
+    \input{chapters/10_appendix}
 
-\microtypesetup{protrusion=false}
+    \microtypesetup{protrusion=false}
 
-\addchap{Abbreviations}
-\begin{acronym}
-	\itemsep-.25\baselineskip
-	\acro{WASM}[WASM]{WebAssembly}
-	\acro{MTE}[MTE]{Memory Tagging Extension}
-	\acro{PAC}[PAC]{Pointer Authentication}
-	\acro{IR}[IR]{intermediate representation}
-	\acro{ASAN}[ASan]{Address Sanitizer}
-	\acro{GEP}[GEP]{\texttt{getelementptr}}
-	\acro{WASI}[WASI]{WebAssembly System Interface}
-	\acro{CLIF}[CLIF]{Cranelift IR}
-	\acro{MMU}[MMU]{Memory Management Unit}
-	\acro{ROP}[ROP]{return-oriented programming}
-	\acro{CHERI}[CHERI]{Capability Hardware Enhanced RISC Instructions}
-	\acro{HWASAN}[HWASan]{Hardware-Assisted Address Sanitizer}
-	\acro{TBI}[TBI]{Top Byte Ignore}
-	\acro{rss}[rss]{resident set size}
-\end{acronym}
+    \addchap{Abbreviations}
+    \begin{acronym}
+        \itemsep-.25\baselineskip
+        \acro{WASM}[WASM]{WebAssembly}
+        \acro{MTE}[MTE]{Memory Tagging Extension}
+        \acro{PAC}[PAC]{Pointer Authentication}
+        \acro{IR}[IR]{intermediate representation}
+        \acro{ASAN}[ASan]{Address Sanitizer}
+        \acro{GEP}[GEP]{\texttt{getelementptr}}
+        \acro{WASI}[WASI]{WebAssembly System Interface}
+        \acro{CLIF}[CLIF]{Cranelift IR}
+        \acro{MMU}[MMU]{Memory Management Unit}
+        \acro{ROP}[ROP]{return-oriented programming}
+        \acro{CHERI}[CHERI]{Capability Hardware Enhanced RISC Instructions}
+        \acro{HWASAN}[HWASan]{Hardware-Assisted Address Sanitizer}
+        \acro{TBI}[TBI]{Top Byte Ignore}
+        \acro{rss}[rss]{resident set size}
+    \end{acronym}
 
-\listoffigures{}
-\listoftables{}
-\microtypesetup{protrusion=true}
-\printbibliography{}
+    \listoffigures{}
+    \listoftables{}
+    \microtypesetup{protrusion=true}
+    \printbibliography{}
 
 \end{document}

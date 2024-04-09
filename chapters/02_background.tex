@@ -4,6 +4,7 @@
 In this chapter we discuss the necessary background on which our work builds upon.
 We start by discussing \ac{WASM}, memory safety in the context of \ac{WASM} and ARM's \ac{PAC} and \ac{MTE} hardware extensions.
 
+
 \section{WebAssembly}
 \label{sec:wasm}
 
@@ -46,6 +47,7 @@ In current runtimes, this is usually achieved using two major approaches.
 
 While the design of WebAssembly is designed to prevent malicious or erroneous programs from compromising the host, buggy programs are still vulnerable to classical memory safety errors discussed in \cref{sec:memory-safety-wasm}, such as buffer overflows.
 
+
 \section{Memory Safety in the context of WebAssembly}
 \label{sec:memory-safety-wasm}
 
@@ -75,6 +77,7 @@ Checks can be inserted automatically at the compiler level, an approach chosen b
 \Ac{ASAN} incurs significant overhead, on average 73\%, which is too high to be deployed in production and is usually only tolerated while testing or fuzzing software.
 A sampling-based version of \ac{ASAN}, GWP-Asan, is deployed in production in several large projects, which results in a low overhead but does not provide complete protection for a single process~\cite{serebryany2023gwp}.
 On a large scale, however, this approach allows for discovering real-world bugs that may not be triggered by testing or fuzzing workloads.
+
 
 \section{Memory Safety Hardware Extensions}
 \label{sec:memory-safety-hardware-extensions}
@@ -114,7 +117,6 @@ On Linux, each process can configure \ac{MTE} by switching between the following
     The fault is delivered after the instruction has retired in the form of a CPU flag.
     The kernel will check this flag at the next context switch and deliver a segmentation fault to the application.
 \end{itemize}
-
 
 \subsubsection{Temporal and Spatial Memory Safety}
 

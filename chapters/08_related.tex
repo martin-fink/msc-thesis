@@ -4,6 +4,7 @@
 This chapter reviews existing efforts in ensuring memory safety, focusing on \ac{WASM} and C/C++ compiled directly to machine code.
 We explore notable projects in these areas, comparing their approaches with our research to highlight our distinct contributions.
 
+
 \section{Memory Safety for WebAssembly}
 \label{sec:related-memory-safety-for-webassembly}
 
@@ -40,6 +41,7 @@ Languages like C, which lack information for static type safety analysis, are no
 \citeauthor*{rehde2023wasm} has worked on implementing pointer authentication primitives~\cite{rehde2023wasm}.
 In their work, they add pointer authentication primitives for data pointers backed by ARM's \ac{PAC} to the memory safety extension described in this thesis.
 This complements our work by providing additional protection mechanisms against pointer corruption.
+
 
 \section{Memory Safety for C}
 \label{sec:related-memory-safety}

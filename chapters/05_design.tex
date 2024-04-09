@@ -3,6 +3,7 @@
 
 This chapter defines our threat model, \ac{WASM} extension, and design to provide memory safety for programs compiled to \ac{WASM}.
 
+
 \section{Threat Model}
 \label{sec:threat-model}
 
@@ -75,6 +76,7 @@ The compiler needs to ensure that bounds checks are guarded against side-channel
 
 Additionally, we do not consider exploits of the program running in the sandbox as vulnerabilities as long as they stay contained in the sandbox.
 
+
 \section{Overview}
 \label{sec:overview}
 
@@ -89,6 +91,7 @@ Figure~\ref{fig:overview} presents an overview of our prototype.
 At build time, the unmodified C/C++ sources and a modified version of libc are compiled using LLVM~\cite{lattner2004llvm}.
 After optimizations, a stack sanitizer analyzes all functions and inserts instrumentation as necessary.
 LLVM's backend then generates WebAssembly binaries that can be deployed and executed on various devices.
+
 
 \section{WebAssembly Extension}
 \label{sec:wasm-extension}
@@ -334,8 +337,9 @@ We iterate over all stack allocations and check if the allocation (a) escapes th
         \For{$alloc \in allocations$}
             \If{escapes($alloc$)}
                 \State $allocsToInstrument \gets allocsToInstrument \cup \{\,alloc\,\}$
-            \ElsIf{isUsedByUnsafeGEP($alloc$)}
-            \State $allocsToInstrument \gets allocsToInstrument \cup \{\,alloc\,\}$
+            \ElsIf
+                    {isUsedByUnsafeGEP($alloc$)}
+                \State $allocsToInstrument \gets allocsToInstrument \cup \{\,alloc\,\}$
             \EndIf
         \EndFor
 

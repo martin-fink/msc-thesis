@@ -6,14 +6,14 @@
 \usepackage[ngerman,american]{babel}
 \usepackage[autostyle]{csquotes}
 \usepackage[%
-  backend=biber,
-  url=true,
-  style=numeric,
-  maxnames=4,
-  minnames=3,
-  maxbibnames=99,
-  giveninits,
-  uniquename=init]{biblatex}
+    backend=biber,
+    url=true,
+    style=numeric,
+    maxnames=4,
+    minnames=3,
+    maxbibnames=99,
+    giveninits,
+    uniquename=init]{biblatex}
 \usepackage{graphicx}
 \usepackage{scrhack} % necessary for listings package
 \usepackage{listings}
@@ -29,10 +29,10 @@
 \usepackage[printonlyused]{acronym}
 \usepackage[hidelinks]{hyperref} % hidelinks removes colored boxes around references and links
 \AtBeginDocument{%
-	\hypersetup{
-		pdftitle=\getTitle,
-		pdfauthor=\getAuthor,
-	}
+    \hypersetup{
+        pdftitle=\getTitle,
+        pdfauthor=\getAuthor,
+    }
 }
 \usepackage{ifthen}
 \usepackage{background}
@@ -43,22 +43,22 @@
 % for fachschaft_print.pdf
 \makeatletter
 \if@twoside
-	\typeout{TUM-Dev LaTeX-Thesis-Template: twoside}
+\typeout{TUM-Dev LaTeX-Thesis-Template: twoside}
 \else
-	\typeout{TUM-Dev LaTeX-Thesis-Template: oneside}
+\typeout{TUM-Dev LaTeX-Thesis-Template: oneside}
 \fi
 \makeatother
 
 \addto\extrasamerican{
-	\def\lstnumberautorefname{Line}
-	\def\chapterautorefname{Chapter}
-	\def\sectionautorefname{Section}
-	\def\subsectionautorefname{Subsection}
-	\def\subsubsectionautorefname{Subsubsection}
+    \def\lstnumberautorefname{Line}
+    \def\chapterautorefname{Chapter}
+    \def\sectionautorefname{Section}
+    \def\subsectionautorefname{Subsection}
+    \def\subsubsectionautorefname{Subsubsection}
 }
 
 \addto\extrasngerman{
-	\def\lstnumberautorefname{Zeile}
+    \def\lstnumberautorefname{Zeile}
 }
 
 \renewcommand{\dateseparator}{-}
@@ -68,10 +68,10 @@
     \backgroundsetup{
         angle=0,
         contents={
-        \begin{tikzpicture}
-          \node[text=red, above=-1cm] at (current page.north) {\draft};
-          \node[text=red, below=-1cm] at (current page.south) {\draft};
-        \end{tikzpicture}
+            \begin{tikzpicture}
+                \node[text=red, above=-1cm] at (current page.north) {\draft};
+                \node[text=red, below=-1cm] at (current page.south) {\draft};
+            \end{tikzpicture}
         },
         opacity=1,
         scale=1
@@ -81,15 +81,15 @@
 
 % Themes
 \ifthenelse{\equal{\detokenize{dark}}{\jobname}}{%
-  % Dark theme
-  \newcommand{\bg}{black} % background
-  \newcommand{\fg}{white} % foreground
-  \usepackage[pagecolor=\bg]{pagecolor}
-  \color{\fg}
+% Dark theme
+    \newcommand{\bg}{black} % background
+    \newcommand{\fg}{white} % foreground
+    \usepackage[pagecolor=\bg]{pagecolor}
+    \color{\fg}
 }{%
-  % Light theme
-  \newcommand{\bg}{white} % background
-  \newcommand{\fg}{black} % foreground
+% Light theme
+    \newcommand{\bg}{white} % background
+    \newcommand{\fg}{black} % foreground
 }
 
 \bibliography{main}
@@ -119,18 +119,18 @@
 % Settings for pgfplots
 \pgfplotsset{compat=newest}
 \pgfplotsset{
-  % For available color names, see http://www.latextemplates.com/svgnames-colors
-  cycle list={TUMBlue\\TUMAccentOrange\\TUMAccentGreen\\TUMSecondaryBlue2\\TUMDarkGray\\},
+% For available color names, see http://www.latextemplates.com/svgnames-colors
+    cycle list={TUMBlue\\TUMAccentOrange\\TUMAccentGreen\\TUMSecondaryBlue2\\TUMDarkGray\\},
 }
 
 % Settings for lstlistings
 \lstset{%
-  basicstyle=\ttfamily,
-  columns=fullflexible,
-  autogobble,
-  keywordstyle=\bfseries\color{TUMBlue},
-  stringstyle=\color{TUMAccentGreen},
-  captionpos=b
+    basicstyle=\ttfamily,
+    columns=fullflexible,
+    autogobble,
+    keywordstyle=\bfseries\color{TUMBlue},
+    stringstyle=\color{TUMAccentGreen},
+    captionpos=b
 }
 
 \usepackage{cleveref}
