@@ -105,12 +105,14 @@ For our extension, we propose the notion of abstract segments and tagged pointer
 We introduce three new instructions that allow the creation of abstract segments and tagged pointers from raw pointers.
 These pointers carry provenance and can only access the segment they were created with.
 Conversely, segments can only be accessed by the tagged pointer created with them rather than with raw indices without provenance.
+We introduce the following new instructions.
+Each instruction takes a constant unsigned offset $o$, which allows compilers to fold in constant offsets when manipulating segments.
 
 \begin{equation*}
-    \text{(new instructions) } e \Coloneqq \textbf{segment.new} \mid \textbf{segment.set\_tag} \mid \textbf{segment.free}
+    \text{(new instructions) } e \Coloneqq \textbf{segment.new}\ o \mid \textbf{segment.set\_tag}\ o \mid \textbf{segment.free}\ o
 \end{equation*}
 
-\paragraph{}
+\noindent
 In the following paragraph, we describe the new instructions in detail.
 
 \begin{description}
@@ -146,46 +148,50 @@ In \cref{fig:typing-rules}, we extend the typing rules of the \ac{WASM} paper~\c
 The rules are of the form of $C \vdash e : \mathit{tf}$.
 An instruction $e$ is valid under the context $C$, with $C_\text{memory}$ being used to access a context component, such as the memory.
 The rule $C_\text{memory} = n$ ensures that the instruction can only be used when a memory is declared.
-The rule $2^a=16$ ensures the alignment is 16\,bytes, as described in the previous section.
 The type $\mathit{tf} = t_1^* \rightarrow t_2^*$ describes how the instruction manipulates the operand stack.
 The instruction $e$ expects an operand stack where it pops off $t_1^*$ and pushes $t_2^*$.
 
 \begin{figure}[t]
     \begin{prooftree}
         \AxiomC{$C_{\text{memory}} = n$}
-        \AxiomC{$2^a=16$}
-        \BinaryInfC{$C \vdash \textbf{segment.new}\ a\ o : \text{i64}\ \text{i64} \rightarrow \text{i64}$}
+        \UnaryInfC{$C \vdash \textbf{segment.new}\ o : \text{i64}\ \text{i64} \rightarrow \text{i64}$}
     \end{prooftree}
     \begin{prooftree}
         \AxiomC{$C_{\text{memory}} = n$}
-        \AxiomC{$2^a=16$}
-        \BinaryInfC{$C \vdash \textbf{segment.set\_tag}\ a\ o : \text{i64}\ \text{i64}\ \text{i64} \rightarrow \epsilon$}
+        \UnaryInfC{$C \vdash \textbf{segment.set\_tag}\ o : \text{i64}\ \text{i64}\ \text{i64} \rightarrow \epsilon$}
     \end{prooftree}
     \begin{prooftree}
         \AxiomC{$C_{\text{memory}} = n$}
-        \AxiomC{$2^a=16$}
-        \BinaryInfC{$C \vdash \textbf{segment.free}\ a\ o : \text{i64}\ \text{i64} \rightarrow \epsilon$}
+        \UnaryInfC{$C \vdash \textbf{segment.free}\ o : \text{i64}\ \text{i64} \rightarrow \epsilon$}
     \end{prooftree}
     \caption{Typing rules of the new instructions. For the definition of context $C$, see the \ac{WASM} paper~\cite{haas2017bringing}.}
     \label{fig:typing-rules}
 \end{figure}
 
 \begin{figure}[H]
+    \small
     \begin{align*}
         \text{(store)}\ s &\Coloneqq \{\dots, \text{tag}\ \mathit{taginst}^*\} \\
         \mathit{taginst} &\Coloneqq b^*
     \end{align*}
     \begin{align}
         s;(\textbf{i64.const}\ k);(t\textbf{.load}\ a\ o)\ &\hookrightarrow_i\ \textbf{trap} \label{eq:smallstep-1}
-        \shortintertext{\hfill $\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$\vskip1em}
+        \shortintertext{\hfill $\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$\vskip0.5em}
         s;(\textbf{i64.const}\ k);(t\textbf{.const}\ c);(t\textbf{.store}\ a\ o)\ &\hookrightarrow_i\ \textbf{trap} \label{eq:smallstep-2}
-        \shortintertext{\hfill $\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$\vskip1em}
-        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ s);(\textbf{segment.new})\ &\hookrightarrow_i\ s';(\textbf{i64.const}\ t) \label{eq:smallstep-3}
-        \shortintertext{\hfill $\text{if}\ t = \text{new\_tag}(k) \land s' = s\ \text{with}\ \text{tag}(i, k, s) = t$\vskip1em}
-        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ t);(\textbf{i64.const}\ s);(\textbf{segment.set\_tag})\ &\hookrightarrow_i\ s' \label{eq:smallstep-4}
-        \shortintertext{\hfill $\text{if}\ s' = s\ \text{with}\ \text{tag}(i, k, s) = t$\vskip1em}
-        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ s);(\textbf{segment.free})\ &\hookrightarrow_i\ s' \label{eq:smallstep-5}
-        \shortintertext{\hfill $\text{if}\ t = \text{free\_tag}(k) \land s' = s\ \text{with}\ \text{tag}(i, k, s) = t$} \notag
+        \shortintertext{\hfill $\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$\vskip0.5em}
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ l);(\textbf{segment.new}\ o)\ &\hookrightarrow_i\ s';(\textbf{i64.const}\ t) \label{eq:smallstep-3}
+        \shortintertext{\hfill $\text{if}\ t = \text{new\_tag}(k + o) \land s' = s\ \text{with}\ s_\text{tag}(i, k + o, l) = t$\vskip0.5em}
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ t);(\textbf{i64.const}\ l);(\textbf{segment.set\_tag}\ o)\ &\hookrightarrow_i\ s' \label{eq:smallstep-4}
+        \shortintertext{\hfill $\text{if}\ s' = s\ \text{with}\ s_\text{tag}(i, k + o, l) = t$\vskip0.5em}
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ l);(\textbf{segment.free}\ o)\ &\hookrightarrow_i\ s' \label{eq:smallstep-5}
+        \shortintertext{\hfill $\text{otherwise}\ t = \text{free\_tag}(k + o) \land s' = s\ \text{with}\ s_\text{tag}(i, k + o, l) = t$\vskip0.5em}
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ l);(\textbf{segment.new}\ o)\ &\hookrightarrow_i\ \textbf{trap} \label{eq:smallstep-6}
+        \shortintertext{\hfill $\text{otherwise}$\vskip0.5em}
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ t);(\textbf{i64.const}\ l);(\textbf{segment.set\_tag}\ o)\ &\hookrightarrow_i\ \textbf{trap} \label{eq:smallstep-7}
+        \shortintertext{\hfill $\text{otherwise}$\vskip0.5em}
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ l);(\textbf{segment.free}\ o)\ &\hookrightarrow_i\ \textbf{trap} \label{eq:smallstep-8}
+        \shortintertext{\hfill $\text{otherwise}$\vskip0.5em}
+        \notag
     \end{align}
     \caption{Small-step reduction rules of the new instructions and added rules for load/stores. See the \ac{WASM} paper~\cite{haas2017bringing} for the definitions of all rules and auxiliary constructs.}
     \label{fig:smallstep-rules}
@@ -195,25 +201,30 @@ The instruction $e$ expects an operand stack where it pops off $t_1^*$ and pushe
 \label{subsec:small-step-reduction-rules}
 
 In \cref{fig:smallstep-rules}, we extend the small-step reduction rules from the WASM paper~\cite{haas2017bringing} using the notation established by \citeauthor*{plotkin1981structural}~\cite{plotkin1981structural}.
-The lower portion of  \cref{fig:smallstep-rules} presents new tag-aware load/store rules that take precedence over the existing ones and new rules for the introduced instructions.
+The lower portion of \cref{fig:smallstep-rules} presents new tag-aware load/store rules that take precedence over the existing ones and new rules for the introduced instructions.
 
 To signal a trap, we reuse operators from the original WASM rules, including the \textbf{trap} operator.
-The state, $s$, is augmented with a storage mechanism that assigns a tag $t$, to each memory byte.
+The state, $s$, is augmented with a storage mechanism that assigns a tag $t$, to each 16-byte granule of memory.
 We use the following notation:
 
 \begin{itemize}
-    \item $s_{\text{tag}}(i, \mathit{addr}, \mathit{len})$: Extracts tags for a memory region accessed by instruction $i$ at address $\mathit{addr}$ with length $\mathit{len}$.
-    \item $s' = s\ \text{with}\ \text{tag}(i, \mathit{addr}, \mathit{len}) = t$: Updates the state with new tags for the memory region at address $\mathit{addr}$ with length $\mathit{len}$.
+    \item $t = s_{\text{tag}}(i, \mathit{addr}, \mathit{len})$: Extracts the tag $t$ for a memory region in instance $i$ accessed at address $\mathit{addr}$ with length $\mathit{len}$, if the tag is the same for all bytes in the range $\left[\mathit{addr}, \mathit{addr} + \mathit{len}\right)$.
+    \item $s' = s\ \text{with}\ \text{tag}(i, \mathit{addr}, \mathit{len}) = t$: Updates the state with new tags for the memory region at address $\mathit{addr}$ with length $\mathit{len}$, if $\mathit{addr}$ is aligned to 16\,bytes, i.e. $\mathit{addr} \bmod 16 = 0$
     \item $t = \text{tag}(\mathit{pointer})$: Extracts the tag from a tagged pointer.
     \item $t' = \text{new\_tag}(t)$: Creates a tagged pointer $t'$ from an untagged pointer $t$ to be used for a new segment.
+    The tag is randomly chosen from a pool of tags.
     \item $t' = \text{free\_tag}(t)$: Creates a tagged pointer $t'$ for the purpose of freeing a segment.
+    The tag is different from the tag stored in $t$.
 \end{itemize}
 
 \noindent
 \Cref{fig:smallstep-rules} highlights the added and modified components in the rules.
 The added load/store rules, specified in \cref{eq:smallstep-1,eq:smallstep-2}, enforce trapping on tag mismatches.
-The rules for executing the new instructions, which modify the state by setting tags, are presented in \cref{eq:smallstep-3,eq:smallstep-4,eq:smallstep-5}.
-Each reduction rule is depicted with the operand stack's top and state $s$ on the left-hand side, representing the pre-execution state, and the resulting stack and state after the execution of instruction $i$ on the right-hand side.
+Similarly, when an access spans memory regions with different tags, these rules trap.
+The rules for executing the new instructions, which modify the state by setting tags, are presented in \cref{eq:smallstep-3,eq:smallstep-4,eq:smallstep-5,eq:smallstep-6,eq:smallstep-7,eq:smallstep-8}.
+\Cref{eq:smallstep-3,eq:smallstep-4,eq:smallstep-5} represent the default case where tags are assigned to aligned, in-bounds addresses, with \cref{,eq:smallstep-6,eq:smallstep-7,eq:smallstep-8} representing the cases with unaligned or out-of-bounds accesses.
+Each reduction rule is depicted with the operand stack's top and state $s$ on the left-hand side, representing the pre-execution state, and the resulting stack and state after the execution of the instruction on the right-hand side.
+For the rules with $\hookrightarrow_i$, the $i$ represents the instance the instruction is executed in.
 
 \subsection{Example}
 \label{subsec:example}
@@ -223,11 +234,11 @@ We will demonstrate our \ac{WASM} extension using the C snippet in \cref{lst:was
 \begin{lstfloat}
     \begin{lstlisting}[frame=h,style=customc,
         label={lst:wasm-example-c-inner}]
-    void foo() {
-        char buf[64];
-        // ...
-        return;
-    }
+        void foo() {
+            char buf[64];
+            // ...
+            return;
+        }
     \end{lstlisting}
     \caption{Example of a C program allocating 64 bytes on the stack.}
     \label{lst:wasm-example-c}
