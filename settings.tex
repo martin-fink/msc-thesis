@@ -35,7 +35,6 @@
     }
 }
 \usepackage{ifthen}
-\usepackage{background}
 \usepackage[hhmmss]{datetime}
 \usepackage{amsmath}
 \usepackage{bussproofs}
@@ -63,20 +62,21 @@
 
 \renewcommand{\dateseparator}{-}
 
-\IfFileExists{git_ref.tex}{%
-    \newcommand{\draft}{\upshape{\texttt{Draft: \input{git_ref.tex} {\yyyymmdddate\today}T\currenttime } } }
-    \backgroundsetup{
-        angle=0,
-        contents={
-            \begin{tikzpicture}
-                \node[text=red, above=-1cm] at (current page.north) {\draft};
-                \node[text=red, below=-1cm] at (current page.south) {\draft};
-            \end{tikzpicture}
-        },
-        opacity=1,
-        scale=1
-    }
-}
+%\usepackage{background}
+%\IfFileExists{git_ref.tex}{%
+%    \newcommand{\draft}{\upshape{\texttt{Draft: \input{git_ref.tex} {\yyyymmdddate\today}T\currenttime } } }
+%    \backgroundsetup{
+%        angle=0,
+%        contents={
+%            \begin{tikzpicture}
+%                \node[text=red, above=-1cm] at (current page.north) {\draft};
+%                \node[text=red, below=-1cm] at (current page.south) {\draft};
+%            \end{tikzpicture}
+%        },
+%        opacity=1,
+%        scale=1
+%    }
+%}
 
 
 % Themes
