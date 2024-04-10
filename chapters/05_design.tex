@@ -184,7 +184,7 @@ The instruction $e$ expects an operand stack where it pops off $t_1^*$ and pushe
         s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ t);(\textbf{i64.const}\ l);(\textbf{segment.set\_tag}\ o)\ &\hookrightarrow_i\ s' \label{eq:smallstep-4}
         \shortintertext{\hfill $\text{if}\ s' = s\ \text{with}\ s_\text{tag}(i, k + o, l) = t$\vskip0.5em}
         s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ l);(\textbf{segment.free}\ o)\ &\hookrightarrow_i\ s' \label{eq:smallstep-5}
-        \shortintertext{\hfill $\text{otherwise}\ t = \text{free\_tag}(k + o) \land s' = s\ \text{with}\ s_\text{tag}(i, k + o, l) = t$\vskip0.5em}
+        \shortintertext{\hfill $\text{if}\ t = \text{free\_tag}(k + o) \land s' = s\ \text{with}\ s_\text{tag}(i, k + o, l) = t$\vskip0.5em}
         s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ l);(\textbf{segment.new}\ o)\ &\hookrightarrow_i\ \textbf{trap} \label{eq:smallstep-6}
         \shortintertext{\hfill $\text{otherwise}$\vskip0.5em}
         s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ t);(\textbf{i64.const}\ l);(\textbf{segment.set\_tag}\ o)\ &\hookrightarrow_i\ \textbf{trap} \label{eq:smallstep-7}
