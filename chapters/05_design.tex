@@ -8,8 +8,8 @@ This chapter defines our threat model, \ac{WASM} extension, and design to provid
 \label{sec:threat-model}
 
 In our threat model (\cref{fig:threat-model}), we differentiate between two aspects of memory safety.
-In both models, we depict trusted components (marked with a \raisebox{-0.25em}{\includegraphics[clip,height=1em]{./figures/build/trusted}}) in green and untrusted components (marked with a \raisebox{-0.25em}{\includegraphics[clip,height=1em]{./figures/build/untrusted}}) in red.
-We additionally highlight the component we are trying to harden (marked with a \raisebox{-0.25em}{\includegraphics[clip,height=1em]{./figures/build/poi}}).
+In both models, we depict trusted components (marked with a \inlineimg{./figures/build/trusted}) in green and untrusted components (marked with a \inlineimg{./figures/build/untrusted}) in red.
+We additionally highlight the component we are trying to harden (marked with a \inlineimg{./figures/build/poi}).
 
 \begin{figure}
     \centering
@@ -101,7 +101,7 @@ Our extension builds on wasm64, the 64-bit variant of WebAssembly.
 We choose wasm64, because it uses a 64-bit integer index type, with 48 of those bits used to index memory.
 This allows us to allocate and store up to 16 bits of metadata per pointer.
 
-For our extension, we introduce the notion of abstract segments and tagged pointers.
+For our extension, we propose the notion of abstract segments and tagged pointers.
 We introduce three new instructions that allow the creation of abstract segments and tagged pointers from raw pointers.
 These pointers carry provenance and can only access the segment they were created with.
 Conversely, segments can only be accessed by the tagged pointer created with them rather than with raw indices without provenance.
@@ -142,7 +142,7 @@ More details can be found in \cref{sec:future-work}.
 \subsection{Typing Rules}
 \label{subsec:typing}
 
-In \cref{fig:typing-rules}, we extend the typing rules in the \ac{WASM} paper~\cite{haas2017bringing} in the notation of \citeauthor*{pierce2002types}~\cite{pierce2002types}.
+In \cref{fig:typing-rules}, we extend the typing rules of the \ac{WASM} paper~\cite{haas2017bringing} in the notation of \citeauthor*{pierce2002types}~\cite{pierce2002types}.
 The rules are of the form of $C \vdash e : \mathit{tf}$.
 An instruction $e$ is valid under the context $C$, with $C_\text{memory}$ being used to access a context component, such as the memory.
 The rule $C_\text{memory} = n$ ensures that the instruction can only be used when a memory is declared.
@@ -170,6 +170,27 @@ The instruction $e$ expects an operand stack where it pops off $t_1^*$ and pushe
     \label{fig:typing-rules}
 \end{figure}
 
+\begin{figure}[H]
+    \begin{align*}
+        \text{(store)}\ s &\Coloneqq \{\dots, \text{tag}\ \mathit{taginst}^*\} \\
+        \mathit{taginst} &\Coloneqq b^*
+    \end{align*}
+    \begin{align}
+        s;(\textbf{i64.const}\ k);(t\textbf{.load}\ a\ o)\ &\hookrightarrow_i\ \textbf{trap} \label{eq:smallstep-1}
+        \shortintertext{\hfill $\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$\vskip1em}
+        s;(\textbf{i64.const}\ k);(t\textbf{.const}\ c);(t\textbf{.store}\ a\ o)\ &\hookrightarrow_i\ \textbf{trap} \label{eq:smallstep-2}
+        \shortintertext{\hfill $\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$\vskip1em}
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ s);(\textbf{segment.new})\ &\hookrightarrow_i\ s';(\textbf{i64.const}\ t) \label{eq:smallstep-3}
+        \shortintertext{\hfill $\text{if}\ t = \text{new\_tag}(k) \land s' = s\ \text{with}\ \text{tag}(i, k, s) = t$\vskip1em}
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ t);(\textbf{i64.const}\ s);(\textbf{segment.set\_tag})\ &\hookrightarrow_i\ s' \label{eq:smallstep-4}
+        \shortintertext{\hfill $\text{if}\ s' = s\ \text{with}\ \text{tag}(i, k, s) = t$\vskip1em}
+        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ s);(\textbf{segment.free})\ &\hookrightarrow_i\ s' \label{eq:smallstep-5}
+        \shortintertext{\hfill $\text{if}\ t = \text{free\_tag}(k) \land s' = s\ \text{with}\ \text{tag}(i, k, s) = t$} \notag
+    \end{align}
+    \caption{Small-step reduction rules of the new instructions and added rules for load/stores. See the \ac{WASM} paper~\cite{haas2017bringing} for the definitions of all rules and auxiliary constructs.}
+    \label{fig:smallstep-rules}
+\end{figure}
+
 \subsection{Small-Step Reduction Rules}
 \label{subsec:small-step-reduction-rules}
 
@@ -193,27 +214,6 @@ We use the following notation:
 The added load/store rules, specified in \cref{eq:smallstep-1,eq:smallstep-2}, enforce trapping on tag mismatches.
 The rules for executing the new instructions, which modify the state by setting tags, are presented in \cref{eq:smallstep-3,eq:smallstep-4,eq:smallstep-5}.
 Each reduction rule is depicted with the operand stack's top and state $s$ on the left-hand side, representing the pre-execution state, and the resulting stack and state after the execution of instruction $i$ on the right-hand side.
-
-\begin{figure}[t]
-    \begin{align*}
-        \text{(store)}\ s &\Coloneqq \{\dots, \text{tag}\ \mathit{taginst}^*\} \\
-        \mathit{taginst} &\Coloneqq b^*
-    \end{align*}
-    \begin{align}
-        s;(\textbf{i64.const}\ k);(t\textbf{.load}\ a\ o)\ &\hookrightarrow_i\ \textbf{trap} \label{eq:smallstep-1}
-        \shortintertext{\hfill $\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$\vskip1em}
-        s;(\textbf{i64.const}\ k);(t\textbf{.const}\ c);(t\textbf{.store}\ a\ o)\ &\hookrightarrow_i\ \textbf{trap} \label{eq:smallstep-2}
-        \shortintertext{\hfill $\text{if}\ s_\text{tag}(i, k + o,\lvert t \rvert) \neq \text{tag}(k)$\vskip1em}
-        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ s);(\textbf{segment.new})\ &\hookrightarrow_i\ s';(\textbf{i64.const}\ t) \label{eq:smallstep-3}
-        \shortintertext{\hfill $\text{if}\ t = \text{new\_tag}(k) \land s' = s\ \text{with}\ \text{tag}(i, k, s) = t$\vskip1em}
-        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ t);(\textbf{i64.const}\ s);(\textbf{segment.set\_tag})\ &\hookrightarrow_i\ s' \label{eq:smallstep-4}
-        \shortintertext{\hfill $\text{if}\ s' = s\ \text{with}\ \text{tag}(i, k, s) = t$\vskip1em}
-        s;(\textbf{i64.const}\ k);(\textbf{i64.const}\ s);(\textbf{segment.free})\ &\hookrightarrow_i\ s' \label{eq:smallstep-5}
-        \shortintertext{\hfill $\text{if}\ t = \text{free\_tag}(k) \land s' = s\ \text{with}\ \text{tag}(i, k, s) = t$} \notag
-    \end{align}
-    \caption{Small-step reduction rules of the new instructions and added rules for load/stores. See the \ac{WASM} paper~\cite{haas2017bringing} for the definitions of all rules and auxiliary constructs.}
-    \label{fig:smallstep-rules}
-\end{figure}
 
 \subsection{Example}
 \label{subsec:example}
@@ -269,7 +269,7 @@ This requires the compiler to instrument the stack allocation, create a new segm
 \end{lstfloat}
 
 The compiler allocates the slot for \texttt{buf} on the stack, decrementing the global \texttt{\$\_\_stack\_pointer} acting as the stack pointer (\cref{line:alloc-1,line:alloc-2,line:alloc-3,line:alloc-4}).
-Then, a new segment of size 64 is created, and the tagged pointer to it is stored in the local \lstinline[style=customwasm]{$buf} ((\cref{line:segment-new-1,line:segment-new-2,line:segment-new-3})).
+Then, a new segment of size 64 is created, and the tagged pointer to it is stored in the local \lstinline[style=customwasm]{$buf} (\cref{line:segment-new-1,line:segment-new-2,line:segment-new-3}).
 Before returning, the segment is retagged using the stack pointers tag, i.e., restoring the previous tag and allowing access through the stack pointer (\cref{line:segment-set-tag-1,line:segment-set-tag-2,line:segment-set-tag-3,line:segment-set-tag-4}).
 Then, the stack pointer is reset, freeing the stack frame (\cref{line:reset-sp-1,line:reset-sp-2,line:reset-sp-3,line:reset-sp-4}).
 
@@ -294,7 +294,7 @@ A modified allocator implementation looks conceptually similar to the snippet in
 \end{lstfloat}
 
 \noindent
-When compiled to \ac{WASM}, we see just three new instructions added to the generated code (\cref{line:segment-new-heap-1,line:segment-new-heap-2,line:segment-new-heap-3}).
+When compiled to \ac{WASM}, we see just three new instructions added to the generated code in \cref{lst:wasm-allocator-example} (\cref{line:segment-new-heap-1,line:segment-new-heap-2,line:segment-new-heap-3}).
 This proves that our extension is minimally invasive, as the calling code does not need to be changed and will continue to work as-is.
 Similarly, when freeing or reallocating memory, the allocator needs to ensure that the no longer valid memory is retagged.
 
@@ -327,8 +327,8 @@ However, only some stack allocations need to be turned into segments.
 We can omit allocations that do not escape or are only accessed using statically verifiable indices.
 Creating segments for these would result in excessive runtime and memory overhead, as each allocation would need to be aligned to 16\,bytes and processed when entering and returning from a function.
 
-To address this, we design an algorithm (\cref{fig:stack-safety-pseudo}) that identifies safe memory regions within the stack that do not require protection, thus avoiding creating segments for the slots mentioned above.
-Below, we present a simplified version of our algorithm.
+To address this, we design an algorithm (\cref{fig:stack-safety-pseudo}) that identifies safe memory regions within the stack which do not require protection, thus avoiding creating segments for the slots mentioned above.
+In \cref{fig:stack-safety-pseudo}, we present a simplified version of our algorithm.
 We iterate over all stack allocations and check if the allocation (a) escapes the function or (b) is indexed into using an unsafe \ac{GEP} instruction.
 
 \begin{figure}
@@ -375,7 +375,7 @@ We iterate over all stack allocations and check if the allocation (a) escapes th
     \label{lst:stack-safety}
 \end{lstfloat}
 
-We demonstrate the algorithm using the function in \cref{lst:stack-safety}.
+We demonstrate the algorithm using the functions in \cref{lst:stack-safety}.
 In the code example, \texttt{i} (\cref{line:ex-i}) is safe, as its address is not used in a potentially unsafe address computation and does not escape.
 The variables \texttt{bytes\_read} and \texttt{buf} (\cref{line:ex-bytes-read,line:ex-buf}) are deemed unsafe as their address escapes (\cref{line:ex-escape}).
 Additionally, \texttt{buf} is accessed using an untrusted index (\cref{line:ex-access}).

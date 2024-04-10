@@ -10,7 +10,7 @@ A fundamental aspect of its design is its linear memory model, which allows thes
 While WebAssembly provides a sandbox for untrusted code, which protects the host and other guests from malicious or buggy code, it does not inherently prevent memory safety issues within an application's memory space.
 This limitation becomes particularly evident when compiling languages like C or C++, where there are no language-level guarantees to prevent these bugs.
 
-Recent \acs{ISA} extensions, such as ARM's \ac{PAC}~\cite{Qualcomm2017PointerAuth} and \acf{MTE}~\cite{ARM2019MTE}, offer promising, high-performance solutions by providing building blocks with low overhead.
+Recent \acs{ISA} extensions, such as ARM's \ac{PAC}~\cite{Qualcomm2017PointerAuth} and \acf{MTE}~\cite{ARM2019MTE}, offer promising, high-performance solutions by providing building blocks that incur low performance overhead.
 These hardware extensions are designed to effectively address memory safety concerns.
 
 We introduce an extension to \ac{WASM} to address spatial and temporal memory safety bugs with a prototype implementation utilizing \ac{MTE} to efficiently implement the safety guarantees.

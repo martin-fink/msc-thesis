@@ -1,11 +1,11 @@
 \chapter{Conclusion}
 \label{ch:conclusion}
 
-In this thesis, we presented three pieces of work:
-(1) a minimally-invasive and adaptable \ac{WASM} extension to provide memory safety primitives to compilers and programmers,
-(2) an implementation consisting of (2a) a compiler toolchain integrated into LLVM, including a modified wasi-libc and allocator to provide spatial and temporal memory safety for the heap, an LLVM sanitizer pass to instrument stack allocations,
+In this thesis, we present three pieces of work:
+(1) a minimally-invasive and adaptable \ac{WASM} extension that provides memory safety primitives to compilers and programmers,
+(2) an implementation consisting of (2a) a compiler toolchain integrated into LLVM, including a modified wasi-libc and an allocator to provide spatial and temporal memory safety for the heap, an LLVM sanitizer pass to instrument stack allocations,
 (2b) an implementation in wasmtime, compiling and running the \ac{WASM} extension on \ac{MTE} hardware, and utilizing \ac{MTE} as a replacement for software-based bounds checks,
-and (3) an evaluation of our work and \ac{MTE} on real hardware.
+and (3) an evaluation of our work and a performance analysis of \ac{MTE}, performed on real hardware.
 
 
 \section{Future Work}
@@ -14,14 +14,14 @@ and (3) an evaluation of our work and \ac{MTE} on real hardware.
 \subsection{Additional Implementations}
 \label{subsec:additional-implementations}
 
-We have implemented a prototype based on \ac{MTE} for our memory safety extension.
+We implement our prototype based on \ac{MTE} for our memory safety extension.
 However, additional implementations exploring different extensions, such as ARM's \ac{TBI}, available from ArmV8.0, would allow storing metadata in the top byte while performing access checks in software, similar to \ac{HWASAN}~\cite{serebryany2018memory}.
-Software-based implementations, while slower, would allow deploying the memory safety extension to more devices than possible using recent extensions, such as \ac{MTE}.
+Software-based implementations, while slower, would allow deploying the memory safety extension to more devices without support for \ac{MTE}.
 
 We are working on an implementation utilizing \ac{CHERI}, with an in-progress implementation for the ARM Morello development board~\cite{UCAM-CL-TR-982}.
 The CHERI architecture provides much more fine-grained checks and unlimited compartments.
 However, it requires widening pointers to 128\,bits and moving from a fixed 16\,byte alignment for segments to a dynamic alignment, depending on the segment size.
-Additionally, revoking capabilities for temporal memory safety is more involved than \ac{MTE}~\cite{xia2019cherivoke}, where memory can be retagged.
+Additionally, revoking capabilities for temporal memory safety is more complicated than \ac{MTE}~\cite{xia2019cherivoke}, where memory can be retagged.
 Exploring and comparing these tradeoffs will be part of our future work.
 
 \subsection{Backward Compatibility}
@@ -44,4 +44,4 @@ While \ac{WASM} lacks raw function pointers, table indices remain vulnerable to 
 As we do not support intra-object safety, some overflow exploits remain possible.
 These could, for instance, target an object's virtual function table to redirect control flow to a different function.
 
-Adding support for data pointers to sign and authenticate these table indices would provide another defense against some attacks.
+Adding support for data pointers to sign and authenticate these table indices would provide another defense against such attacks.

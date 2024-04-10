@@ -22,9 +22,9 @@ The segment memory relies on access through unforgeable \textit{handles}, akin t
 This thesis adopts a different approach by enabling a gradual migration of memory segments into the linear memory.
 This preserves compatibility with unmodified code, as only the allocation of memory regions has to be changed.
 Memory accesses are still performed through integers, not pointers.
-We do not implement intra-object memory safety to allow implementation with \ac{MTE}.
+We do not implement intra-object memory safety to enable an implementation with \ac{MTE}.
 While MS-WASM proposes a technique to implement intra-object safety with a tagged-memory approach (shading), this is not supported by \ac{MTE}.
-We thus choose this tradeoff, as utilizing \ac{MTE} allows our implementation to run with significantly lower overhead on devices supporting this technology.
+We, thus, choose this tradeoff, because utilizing \ac{MTE} allows our implementation to run with significantly lower overhead on devices equipped with this hardware feature.
 
 \subsection{RichWasm}
 \label{subsec:richwasm}
@@ -38,7 +38,7 @@ Languages like C, which lack information for static type safety analysis, are no
 \subsection{Pointer Authentication}
 \label{subsec:related-pointer-authentication}
 
-\citeauthor*{rehde2023wasm} has worked on implementing pointer authentication primitives~\cite{rehde2023wasm}.
+\citeauthor*{rehde2023wasm}~\cite{rehde2023wasm} has worked on implementing pointer authentication primitives.
 In their work, they add pointer authentication primitives for data pointers backed by ARM's \ac{PAC} to the memory safety extension described in this thesis.
 This complements our work by providing additional protection mechanisms against pointer corruption.
 
@@ -68,19 +68,20 @@ We can divide these approaches into three major categories: (1) trip-wire-based,
 \subsubsection{Trip-Wire-Based Approach}
 
 Trip-wire-based projects guard zones around allocations to catch memory safety errors.
-Some projects that fall into this category are \ac{ASAN}~\cite{serebryany2012addresssanitizer}, GWP-ASan~\cite{serebryany2023gwp}, or Valgrind Memcheck~\cite{nethercote2007valgrind}.
+Some projects that fall into this category are \ac{ASAN}~\cite{serebryany2012addresssanitizer}, GWP-ASan~\cite{serebryany2023gwp}, SafePM~\cite{bozdougan2022safepm}, or Valgrind Memcheck~\cite{nethercote2007valgrind}.
 In the case of \ac{ASAN}, $\sfrac{1}{8}$ of the whole address space is mapped as shadow memory, with one bit of shadow memory representing the state of one byte of memory.
 When allocating memory, the allocation is padded, and guard zones around the allocation are marked as inaccessible.
 When freeing memory, the whole memory block is marked as inaccessible.
 The sanitizer inserts checks before each memory access that check the address being accessed.
 \Ac{ASAN} was built as a debugging tool to be used when running tests or fuzzing programs, as it has an average overhead of 73\,\%.
+SafePM~\cite{bozdougan2022safepm} utilizes \ac{ASAN} to provide the same memory safety guarantees for applications utilizing persistent memory.
 
 GWP-ASan~\cite{serebryany2023gwp} is intended to be deployed in production.
 It adopts a probabilistic approach to memory safety by sampling a subset of allocations and placing them in a guarded memory region to detect spatial and temporal memory safety violations for those allocations.
 Its low selection probability minimizes runtime overhead.
 The goal is to uncover hard-to-reproduce memory bugs triggered by real-world user behavior not covered by fuzzing or tests.
 
-In contrast, Valgrind Memcheck utilizes dynamic binary instrumentation, which does not require recompilation from source.
+In contrast, Valgrind Memcheck utilizes dynamic binary instrumentation, which does not require recompilation from source, but incurs much larger overheads.
 
 \subsubsection{Object-Based Approach}
 
@@ -90,7 +91,7 @@ Metadata about the allocation can be efficiently retrieved thanks to the alignme
 Usually, pointers are checked when doing pointer arithmetic, not when dereferencing pointers.
 This poses a challenge for C, as the language permits out-of-bounds pointers as long as they are not dereferenced.
 Intra-object safety is more challenging for object-based approaches, as enforcing those additional constraints may require more sophisticated data structures.
-Baggy Bounds Checking does not support this intra-object safety.
+For instance, Baggy Bounds Checking does not support intra-object safety.
 
 \subsubsection{Pointer-Based Approach}
 
@@ -113,7 +114,7 @@ Currently, hardware exists in the form of the ARM Morello board~\cite{UCAM-CL-TR
 We consider memory-tagging-based approaches as a hybrid of object- and pointer-based approaches.
 \Ac{HWASAN}~\cite{serebryany2018memory} or \ac{MTE} both associate metadata with the pointer in its upper, unused bits and with objects by assigning tags to memory.
 In the case of \ac{HWASAN}, only memory accesses are instrumented, while memory accesses are checked by hardware with \ac{MTE}.
-This again allows out-of-bounds pointers to exist if they are not dereferenced.
+This allows out-of-bounds pointers to exist if they are not dereferenced.
 However, intra-object safety is not possible to implement, similar to object-based approaches.
 In the case of both \ac{HWASAN} and \ac{MTE}, binary compatibility is preserved, as the hardware ignores extra metadata in the upper bits of pointers, thus allowing uninstrumented code to handle pointers with and without metadata.
 
@@ -121,7 +122,7 @@ In the case of both \ac{HWASAN} and \ac{MTE}, binary compatibility is preserved,
 \label{subsec:hardened-memory-allocators}
 
 A few memory allocators have implemented support for \ac{MTE}.
-These provide probabilistic memory safety against both spatial and temporal memory safety as long as no tag collisions occur.
+They provide probabilistic memory safety against both spatial and temporal memory safety as long as no tag collisions occur.
 
 \begin{itemize}
     \item Scudo Hardened Allocator (used in Android): A security-oriented allocator providing defense mechanisms against heap-based vulnerabilities~\cite{scudo_allocator}.

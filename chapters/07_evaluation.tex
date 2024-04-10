@@ -4,11 +4,12 @@
 
 \section{Experimental Setup}\label{sec:experimental-setup}
 
-We conduct our benchmarks on a Google Pixel 8 equipped with a Google Tensor G3 chip, comprising 1\,$\times$\,Cortex-X3 (2.91\,GHz), 4\,$\times$\,Cortex-A715 (2.37\,GHz), and 4\,$\times$\,Cortex-A510 (1.7\,GHz) cores, with \ac{MTE} enabled.
+We conduct our benchmarks on a Google Pixel 8 equipped with a Google Tensor G3 chip, including 1\,$\times$\,Cortex-X3 (2.91\,GHz), 4\,$\times$\,Cortex-A715 (2.37\,GHz), and 4\,$\times$\,Cortex-A510 (1.7\,GHz) cores, with \ac{MTE} enabled.
 See \cref{tab:cores-comparison} for details on the benchmarked cores.
 As of the time of writing, this is the sole commercially available device featuring \ac{MTE}.
 To mitigate thermal throttling, we attach a cooling fan to the device.
 Each performance test is run on each CPU type available on the Tensor G3 chip by pinning it to a single respective core.
+We run the benchmarks from the PolyBench/C 3.2 suite~\cite{polybenchc}, which includes 30 kernels from domains such as linear algebra, data mining, stencils, and medley operations.
 
 
 \begin{table}[ht]
@@ -20,7 +21,7 @@ Each performance test is run on each CPU type available on the Tensor G3 chip by
         \textbf{Spec}      & \textbf{Cortex-X3}    & \textbf{Cortex-A715} & \textbf{Cortex-A510} \\
         \hline
         Cores              & 1                     & 4                    & 4                    \\
-        Pipeline           & in-order              & out-of-order         & out-of-order         \\
+        Pipeline           & out-of-order          & out-of-order         & in-order             \\
         Superscalar        & Yes                   & Yes                  & Yes                  \\
         Architecture       & ArmV9.2               & ArmV9.2              & ArmV9.2              \\
         Maxmimum Frequency & 2.91\,GHz             & 2.37\,GHz            & 1.7\,GHz             \\
@@ -47,9 +48,6 @@ Each performance test is run on each CPU type available on the Tensor G3 chip by
     \end{tabular}
 \end{table}
 
-\noindent
-We run the benchmarks from the PolyBench/C 3.2 suite~\cite{polybenchc}.
-
 
 \section{Performance Overheads}
 \label{sec:performance-overheads}
@@ -64,10 +62,10 @@ We run the benchmarks from the PolyBench/C 3.2 suite~\cite{polybenchc}.
 \Cref{fig:runtime-overheads-combined} illustrates the mean runtime overheads for PolyBench/C benchmarks for each CPU core available on the Tensor G3 chip.
 Compared to wasm64, our memory safety extension has a mean overhead of 5.8\,\% and 4.9\,\% on the two out-of-order high-performance cores.
 On the in-order Cortex-A510, we see an overhead of just 1.0\,\%.
-Generally, we see that the overhead of bounds checks through the switch from wasm32 to wasm64 is lower on the out-of-order cores, as those can speculate on bounds checks, while the in-order cores cannot.
-This also explains the low overhead of our memory safety extension on the in-order cores, as we spend more time doing bounds checks than on the in-order cores.
+Generally, we observe that the overhead of bounds checks through the switch from wasm32 to wasm64 is lower on the out-of-order cores, as those can speculate on bounds checks, while the in-order cores cannot.
+This also explains the low overhead of our memory safety extension on the in-order cores, as we spend more time doing bounds checks than on the out-of-order cores.
 
-When we replace software-based bounds checks with \ac{MTE} bounds checks, we see the overhead largely disappearing.
+When we replace software-based bounds checks with \ac{MTE} sandboxing, we see the overhead largely disappearing.
 The remaining overhead can be explained through (1) the natural overhead that enabling \ac{MTE} synchronous mode poses (see \cref{subsec:synchronous-and-asynchronous-mode}) and (2) the fact that the linear memory needs to be tagged on program startup.
 This overhead is especially noticeable for short-running modules that require large amounts of linear memory.
 
@@ -83,7 +81,7 @@ For the memory safety extension, users may decide the additional risk is worth t
 
 \section{Memory Overheads}\label{sec:memory-overheads}
 
-Memory tagging incurs overhead, particularly for small allocations due to the 16-byte alignment required for \ac{MTE}.
+Memory tagging incurs memory space overheads, particularly for small allocations due to the 16-byte alignment required for \ac{MTE}.
 Our measurements did not show a significant difference in maximum \ac{rss}.
 This is because (1) safe allocations do not incur space overhead, and (2) for large allocations, the 16-byte alignment overhead is proportionally small.
 The main overhead in \cref{fig:memory-overheads} is primarily due to the switch to wasm64, as pointer sizes are doubled.
@@ -104,7 +102,7 @@ We evaluate the security guarantees from the perspective of internal and externa
 \label{subsec:sec-guarantees-external-memory-safety}
 
 Running with \ac{MTE} bounds checks, with \ac{MTE} being configured to run in synchronous mode, prevents programs from escaping their sandbox.
-We prevent programs from forging tags by masking the respective tag bits before computing the effective address, as described in \cref{subsec:bounds-checks}.
+We prevent programs from forging tags by masking the respective tag bits before computing the effective address, as described in \cref{sec:external-memory-safety-impl}.
 Other defense mechanisms, such as structured control flow, the typed stack, and function calls through typed and checked tables, remain unchanged by our implementation.
 However, we limit the number of sandboxes in one process to at most 15, which is required to assign a distinct tag to each sandbox.
 
@@ -113,12 +111,12 @@ Switching to async \ac{MTE} mode is not feasible to retain external memory safet
 \subsection{Internal Memory Safety}
 \label{subsec:sec-guarantees-internal-memory-safety}
 
-Our choice to leverage \ac{MTE} allows for a low overhead, so this can be deployed in addition to testing using other mechanisms, such as \ac{ASAN}.
+Our choice to utilize \ac{MTE} results in low overhead, making it possible to deploy it in production.
 However, our approach does not provide complete memory safety for internal memory safety, as \ac{MTE} provides a limited number of tags and should be used as a secondary, not primary, defense mechanism to harden applications in the wild.
 A tag collision means two memory regions could accidentally share the same tag, potentially leading to a missed security violation.
 For example, if a buffer overflow writes slightly beyond its intended bounds, but the adjacent memory has the same tag, \ac{MTE} cannot detect the issue.
 
-We can calculate the probability for a tag collision for $k=2$ random tags according to \cref{fig:tag-collision}, with $n=16$ available tags for \ac{MTE} bounds disabled (\cref{fig:tag-collision-16}) and $n=8$ for bounds enabled (\cref{fig:tag-collision-8}), as we reserve one bit for the bounds checking mechanism.
+We can calculate the probability for a tag collision for $k=2$ random tags according to \cref{fig:tag-collision}, with $n=16$ available tags for \ac{MTE} bounds disabled (\cref{fig:tag-collision-16}) and $n=8$ for bounds enabled (\cref{fig:tag-collision-8}), as we reserve one bit for the sandboxing mechanism.
 
 \begin{figure}[h]
     \centering
@@ -153,9 +151,9 @@ However, we ensure that adjacent allocations are always tagged with distinct tag
 \section{MTE Performance evaluation}
 \label{sec:mte-performance-evaluation}
 
-We evaluated the performance of different characteristics of \ac{MTE} as implemented on the Tensor G3 chip.
+We evaluat the performance of different characteristics of \ac{MTE} as implemented on the Tensor G3 chip.
 All the programs used to measure results in this section are implemented in Rust and available on GitHub\footnote{\url{https://github.com/martin-fink/mte-stg-bench}}.
-As our benchmarking library, we used criterion\footnote{\url{https://github.com/bheisler/criterion.rs}}.
+As our benchmarking library, we use criterion\footnote{\url{https://github.com/bheisler/criterion.rs}}.
 After each benchmarking run, we let the device cool down for 30\,seconds to prevent throttling.
 Additionally, we measure instruction throughput and latencies on all CPU cores.
 
@@ -168,11 +166,11 @@ We see the cycles and micro-ops per instruction in \cref{tab:instruction-latenci
 
 We can make a few interesting observations:
 \begin{itemize}
-    \item For the set-tag instructions, Cortex-X3 has double the latency and half the throughput compared to Cortex-A720.
-    \item On Cortex-A510, \texttt{st2g} has double the latency and half the throughput of \texttt{stg}, while also being the only one with two micro-ops per instruction.
+    \item For the set-tag instructions, Cortex-X3 (out-of-order) has double the latency and half the throughput compared to Cortex-A720 (out-of-order).
+    \item On Cortex-A510 (in-order), \texttt{st2g} has double the latency and half the throughput of \texttt{stg}, while also being the only one with two micro-ops per instruction.
     This leads us to believe that this instruction performs the same micro-op as \texttt{stg}, but for two tag granules, while the operation is optimized on the other cores.
-    \item Loading tags has a higher latency and lower or equal throughput than storing tags, except for the Cortex-X3.
-    \item As expected, we found latency-bound instructions to perform as many or more cycles per instruction compared to throughput-bound instructions.
+    \item Loading tags has a higher latency and lower or equal throughput than storing tags, except for the Cortex-X3, where both types of instructions require one cycle.
+    \item As expected, we observe that latency-bound instructions perform as many or more cycles per instruction compared to throughput-bound instructions.
 \end{itemize}
 
 \newcolumntype{C}{>{\centering\arraybackslash}p{2em}}
@@ -197,7 +195,7 @@ We can make a few interesting observations:
 \subsection{Tagging Primitives}
 \label{subsec:tagging-primitives}
 
-We evaluated the performance of the different types of instructions to set the tag for a memory granule available in EL0 (user space) with the combinations described in \cref{tab:stg-instructions}.
+We evaluate the performance of the different types of instructions to set the tag for a memory granule available in EL0 (user space) with the combinations described in \cref{tab:stg-instructions}.
 Here, instruction refers to the instruction used to set the tag, and granule size refers to the amount of memory being tagged with a single instruction.
 The instructions \texttt{stzg} and \texttt{stgp} implicitly set the granule to zero, while we have to use an explicit memset for other instructions.
 
@@ -268,7 +266,9 @@ In \cref{fig:migrate-performance}, we analyze the performance of two migration s
 \end{enumerate}
 
 \noindent
-Approach 3 is slightly slower than approach 2 on the Cortex-X3 but faster on the other cores.
+Iterative copying has an overhead of 9.4\,\%, 12.0\,\%, and 5.2\,\% compared to the baseline of copying just data on the Cortex-X3 (out-of-order), Cortex-A720 (out-of-order), and Cortex-A510 (in-order), respectively.
+Disabling and re-enabling \ac{MTE} incurs an overhead of 5.25\,\%, 21.8\,\%, and 18.1\,\% respectively.
+This is in line with the findings in \cref{subsec:instruction-latencies-and-throughput}, which shows that the Cortex-X3 core requires more cycles per tagging instruction compared to the Cortex-A720.
 
 \begin{figure}[h]
     \centering

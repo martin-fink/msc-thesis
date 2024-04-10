@@ -133,7 +133,7 @@
     captionpos=b
 }
 
-\usepackage{cleveref}
+\usepackage[noabbrev]{cleveref}
 \usepackage{algpseudocode}
 
 % for the pgf plots by mpl
@@ -147,3 +147,5 @@
 \floatname{lstfloat}{Listing}
 \crefname{lstfloat}{listing}{listings}
 \Crefname{lstfloat}{Listing}{Listings}
+
+\newcommand{\inlineimg}[1]{\raisebox{-0.25em}{\includegraphics[clip,height=1em]{#1}}}
